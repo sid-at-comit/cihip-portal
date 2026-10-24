@@ -98,8 +98,9 @@ def render_master(
         <a href="/admin/security" class="nav-item {'active' if active_nav == 'admin' else ''}">{t('system_security', lang)}</a>
         """
 
-    # Always provide API docs link
+    # Always provide API docs link and Login link
     nav_items += f"""
+    <a href="/login" class="nav-item {'active' if active_nav == 'login' else ''}">🔐 Login Portals</a>
     <a href="/api/docs" class="nav-item {'active' if active_nav == 'api' else ''}">{t('api_docs', lang)}</a>
     """
 
@@ -282,7 +283,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         Citizens access their Longitudinal Health Record (LHR), download digitally signed prescriptions with verifiable QR codes, and exercise granular consent control per DISHA & ABDM.
                     </p>
                 </div>
-                <a href="/demo-switch?role=PATIENT" class="btn btn-secondary btn-sm" style="width:100%;">Open Patient Dashboard →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=PATIENT" class="btn btn-primary btn-sm" style="flex:1;">Patient Login →</a>
+                    <a href="/demo-switch?role=PATIENT" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
 
             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -296,7 +300,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         Clinicians search patients by UPK/ABHA, record encounters with SNOMED CT diagnoses, place LOINC diagnostic orders, review lab reports with abnormal flags, and issue PKI-signed e-prescriptions.
                     </p>
                 </div>
-                <a href="/demo-switch?role=DOCTOR" class="btn btn-secondary btn-sm" style="width:100%;">Open Doctor Dashboard →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=DOCTOR" class="btn btn-primary btn-sm" style="flex:1;">Doctor Login →</a>
+                    <a href="/demo-switch?role=DOCTOR" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
 
             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -310,7 +317,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         NABL technicians receive routed test orders, input structured observations against universal LOINC reference standards, generate official reports, and handle amendment workflows.
                     </p>
                 </div>
-                <a href="/demo-switch?role=LAB_TECHNICIAN" class="btn btn-secondary btn-sm" style="width:100%;">Open Lab Worklist →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=LAB_TECHNICIAN" class="btn btn-primary btn-sm" style="flex:1;">Lab Login →</a>
+                    <a href="/demo-switch?role=LAB_TECHNICIAN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
 
             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -324,7 +334,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         Hospital administrators supervise department registrations, verify clinical doctor rosters, review institutional order volumes, and audit facility data access metrics.
                     </p>
                 </div>
-                <a href="/demo-switch?role=HOSPITAL_ADMIN" class="btn btn-secondary btn-sm" style="width:100%;">Open Hospital Admin →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=HOSPITAL_ADMIN" class="btn btn-primary btn-sm" style="flex:1;">Hospital Login →</a>
+                    <a href="/demo-switch?role=HOSPITAL_ADMIN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
 
             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -338,7 +351,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         Authorized researchers query de-identified clinical datasets with guaranteed k-anonymity (k &ge; 50), analyze disease incidence trends, and export secure CSV/JSON/FHIR Bundles.
                     </p>
                 </div>
-                <a href="/demo-switch?role=RESEARCHER" class="btn btn-secondary btn-sm" style="width:100%;">Open Research Lake →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=RESEARCHER" class="btn btn-primary btn-sm" style="flex:1;">Researcher Login →</a>
+                    <a href="/demo-switch?role=RESEARCHER" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
 
             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -352,7 +368,10 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                         Security administrators monitor real-time Zero-Trust ABAC policy evaluations and verify the cryptographic integrity of the SHA-256 blockchain-style immutable audit chain.
                     </p>
                 </div>
-                <a href="/demo-switch?role=SYSTEM_ADMIN" class="btn btn-secondary btn-sm" style="width:100%;">Open Security Ledger →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/login?role=SYSTEM_ADMIN" class="btn btn-primary btn-sm" style="flex:1;">SecOps Login →</a>
+                    <a href="/demo-switch?role=SYSTEM_ADMIN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                </div>
             </div>
         </div>
     </div>
@@ -1910,4 +1929,165 @@ def render_api_docs_page() -> str:
             </div>
         </div>
     </div>
+    """
+
+
+def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None, lang: str = "en") -> str:
+    """Render comprehensive national login portal with tabs for Patients, Doctors, Labs, and Hospitals."""
+    role = role.upper()
+    if role not in ("PATIENT", "DOCTOR", "LAB_TECHNICIAN", "HOSPITAL_ADMIN", "RESEARCHER", "SYSTEM_ADMIN"):
+        role = "PATIENT"
+
+    err_html = ""
+    if error_message:
+        err_html = f"""
+        <div class="alert-banner alert-danger" style="margin-bottom:20px;">
+            <span>⚠️ {html.escape(error_message)}</span>
+        </div>
+        """
+
+    # Role meta info for active form
+    meta = {
+        "PATIENT": {
+            "title": "Patient & Citizen Login",
+            "badge": '<span class="badge badge-success">ABHA / UPK Unified Access</span>',
+            "id_label": "ABHA Number (14-digit) or Username / UPK:",
+            "id_placeholder": "e.g. 91-4567-8901-2345 or patient_rajesh",
+            "demo_user": "patient_rajesh",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: Rajesh Sharma (ABHA: 91-4567-8901-2345 / Username: patient_rajesh)",
+            "redirect_note": "Access your Longitudinal Health Record, e-prescriptions with QR codes, and consent dashboard."
+        },
+        "DOCTOR": {
+            "title": "Clinical Practitioner Login",
+            "badge": '<span class="badge badge-primary">NMC / HPR Verified Clinicians</span>',
+            "id_label": "NMC Registration Number or Username / UDK:",
+            "id_placeholder": "e.g. NMC-MCI-2015-88492 or doctor_priya",
+            "demo_user": "doctor_priya",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: Dr. Priya Nair, MD (AIIMS Cardiology / NMC: NMC-MCI-2015-88492)",
+            "redirect_note": "Conduct consultations, record encounters with SNOMED CT, order tests, and issue PKI-signed prescriptions."
+        },
+        "LAB_TECHNICIAN": {
+            "title": "Diagnostic Laboratory Portal",
+            "badge": '<span class="badge badge-purple">NABL Accredited Diagnostics</span>',
+            "id_label": "NABL Certificate Number or Username / Lab ID:",
+            "id_placeholder": "e.g. NABL-MED-2024-9912 or lab_ramesh",
+            "demo_user": "lab_ramesh",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: Ramesh Verma (Apex NABL Diagnostics / NABL: NABL-MED-2024-9912)",
+            "redirect_note": "Manage prioritized test queues, input structured LOINC observations, and authorize diagnostic reports."
+        },
+        "HOSPITAL_ADMIN": {
+            "title": "Hospital Facility Administration",
+            "badge": '<span class="badge badge-warning">HFR Registered Institutions</span>',
+            "id_label": "HFR Facility Registry ID or Username:",
+            "id_placeholder": "e.g. HFR-DEL-000101 or admin_aiims",
+            "demo_user": "admin_aiims",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: AIIMS New Delhi Administration (HFR: HFR-DEL-000101)",
+            "redirect_note": "Supervise clinical departments, verify doctor credentials, and audit facility data exchange metrics."
+        },
+        "RESEARCHER": {
+            "title": "ICMR Epidemiological Research Gateway",
+            "badge": '<span class="badge badge-info">De-Identified Public Health Analytics</span>',
+            "id_label": "Researcher Registry ID or Username:",
+            "id_placeholder": "e.g. ICMR-RES-2026 or researcher_sunita",
+            "demo_user": "researcher_sunita",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: Dr. Sunita Kulkarni (ICMR Epidemiologist / ICMR-RES-2026)",
+            "redirect_note": "Query privacy-preserved cohorts with k-anonymity (k >= 50) and export de-identified FHIR bundles."
+        },
+        "SYSTEM_ADMIN": {
+            "title": "Zero-Trust SecOps Administration",
+            "badge": '<span class="badge badge-danger">National Governance & Ledger Audit</span>',
+            "id_label": "Security Admin Username / ID:",
+            "id_placeholder": "e.g. admin_cihip or CIHIP-HQ-DELHI",
+            "demo_user": "admin_cihip",
+            "demo_pass": "Admin@123",
+            "demo_hint": "Demo: Vikramaditya Sen (Zero-Trust SecOps / CIHIP-HQ-DELHI)",
+            "redirect_note": "Monitor real-time zero-trust access evaluations and verify SHA-256 blockchain audit ledger integrity."
+        }
+    }.get(role, {})
+
+    # Tab navigation bar
+    tabs = [
+        ("PATIENT", "👤 Patient", "/login?role=PATIENT"),
+        ("DOCTOR", "🩺 Doctor", "/login?role=DOCTOR"),
+        ("LAB_TECHNICIAN", "🔬 Diagnostic Lab", "/login?role=LAB_TECHNICIAN"),
+        ("HOSPITAL_ADMIN", "🏥 Hospital Admin", "/login?role=HOSPITAL_ADMIN"),
+        ("RESEARCHER", "📊 Researcher", "/login?role=RESEARCHER"),
+        ("SYSTEM_ADMIN", "🛡️ SecOps Admin", "/login?role=SYSTEM_ADMIN")
+    ]
+
+    tab_links = ""
+    for r_code, r_title, r_href in tabs:
+        is_active = (r_code == role)
+        active_style = "background:var(--primary); color:#ffffff; border-color:var(--primary); font-weight:700;" if is_active else "background:#ffffff; color:#475569; border-color:#cbd5e1;"
+        tab_links += f"""
+        <a href="{r_href}" class="btn btn-sm" style="{active_style} border-radius:6px; text-decoration:none; padding:8px 14px;">
+            {r_title}
+        </a>
+        """
+
+    return f"""
+    <div style="max-width:680px; margin:20px auto;">
+        <!-- Role Selector Tabs -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:16px;">
+            {tab_links}
+        </div>
+
+        <div class="card" style="box-shadow:var(--shadow-md); border-top:4px solid var(--primary);">
+            <div style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #e2e8f0;">
+                <div style="margin-bottom:8px;">{meta['badge']}</div>
+                <h2 style="color:var(--primary); font-size:1.6rem; font-weight:800;">{meta['title']}</h2>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:4px;">{meta['redirect_note']}</p>
+            </div>
+
+            {err_html}
+
+            <form action="/login" method="POST">
+                <input type="hidden" name="role" value="{role}">
+
+                <div class="form-group">
+                    <label class="form-label">{meta['id_label']}</label>
+                    <input type="text" id="login_identifier" name="identifier" class="form-control" placeholder="{meta['id_placeholder']}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password / Secret Key:</label>
+                    <input type="password" id="login_password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <!-- One-click Demo Credentials Helper -->
+                <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; padding:10px 14px; margin:16px 0; font-size:0.82rem; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="color:var(--primary);">💡 Quick Test Account:</strong><br>
+                        <span style="color:#475569;">{meta['demo_hint']}</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemo('{meta['demo_user']}', '{meta['demo_pass']}')">
+                        ⚡ Auto-fill
+                    </button>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.95rem; font-weight:700;">
+                        Secure Login →
+                    </button>
+                </div>
+            </form>
+
+            <div style="border-top:1px solid #e2e8f0; margin-top:24px; padding-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
+                <span>🔒 Zero-Trust NIST SP 800-207</span>
+                <span>🇮🇳 DISHA 2018 & DPDPA 2023 Compliant</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function fillDemo(u, p) {{
+        document.getElementById('login_identifier').value = u;
+        document.getElementById('login_password').value = p;
+    }}
+    </script>
     """
