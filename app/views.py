@@ -98,9 +98,10 @@ def render_master(
         <a href="/admin/security" class="nav-item {'active' if active_nav == 'admin' else ''}">{t('system_security', lang)}</a>
         """
 
-    # Always provide API docs link and Login link
+    # Always provide API docs link, Sign In link, and Register link
     nav_items += f"""
-    <a href="/login" class="nav-item {'active' if active_nav == 'login' else ''}">🔐 Login Portals</a>
+    <a href="/signin" class="nav-item {'active' if active_nav in ('signin', 'login') else ''}">🔐 Sign In</a>
+    <a href="/signup" class="nav-item {'active' if active_nav in ('signup', 'register') else ''}">📝 Register</a>
     <a href="/api/docs" class="nav-item {'active' if active_nav == 'api' else ''}">{t('api_docs', lang)}</a>
     """
 
@@ -117,7 +118,10 @@ def render_master(
         """
     else:
         user_info_html = f"""
-        <a href="/login" class="btn btn-primary btn-sm">{t('login', lang)}</a>
+        <div style="display:flex; gap:6px;">
+            <a href="/signin" class="btn btn-secondary btn-sm">Sign In</a>
+            <a href="/signup" class="btn btn-primary btn-sm">Register</a>
+        </div>
         """
 
     return f"""<!DOCTYPE html>
@@ -2072,12 +2076,16 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
 
                 <div style="margin-top:20px;">
                     <button type="submit" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.95rem; font-weight:700;">
-                        Secure Login →
+                        Secure Sign In →
                     </button>
                 </div>
             </form>
 
-            <div style="border-top:1px solid #e2e8f0; margin-top:24px; padding-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
+            <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px dashed #cbd5e1; font-size:0.88rem;">
+                New to CIHIP? <a href="/signup?role={role}" style="color:var(--primary); font-weight:700; text-decoration:none;">Register / Sign Up as {role.replace('_', ' ').title()} →</a>
+            </div>
+
+            <div style="border-top:1px solid #e2e8f0; margin-top:16px; padding-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
                 <span>🔒 Zero-Trust NIST SP 800-207</span>
                 <span>🇮🇳 DISHA 2018 & DPDPA 2023 Compliant</span>
             </div>
@@ -2090,4 +2098,348 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
         document.getElementById('login_password').value = p;
     }}
     </script>
+    """
+
+
+def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = None, lang: str = "en", hospitals: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Render comprehensive national onboarding / sign-up portal for Patients, Doctors, Labs, and Hospitals."""
+    role = role.upper()
+    if role not in ("PATIENT", "DOCTOR", "LAB_TECHNICIAN", "HOSPITAL_ADMIN"):
+        role = "PATIENT"
+
+    err_html = ""
+    if error_message:
+        err_html = f"""
+        <div class="alert-banner alert-danger" style="margin-bottom:20px;">
+            <span>⚠️ {html.escape(error_message)}</span>
+        </div>
+        """
+
+    # Role tabs
+    tabs = [
+        ("PATIENT", "👤 Patient Sign-Up", "/signup?role=PATIENT"),
+        ("DOCTOR", "🩺 Doctor Onboarding", "/signup?role=DOCTOR"),
+        ("LAB_TECHNICIAN", "🔬 Diagnostic Lab Register", "/signup?role=LAB_TECHNICIAN"),
+        ("HOSPITAL_ADMIN", "🏥 Hospital Facility Register", "/signup?role=HOSPITAL_ADMIN")
+    ]
+
+    tab_links = ""
+    for r_code, r_title, r_href in tabs:
+        is_active = (r_code == role)
+        active_style = "background:var(--primary); color:#ffffff; border-color:var(--primary); font-weight:700;" if is_active else "background:#ffffff; color:#475569; border-color:#cbd5e1;"
+        tab_links += f"""
+        <a href="{r_href}" class="btn btn-sm" style="{active_style} border-radius:6px; text-decoration:none; padding:8px 14px;">
+            {r_title}
+        </a>
+        """
+
+    hosp_options = ""
+    if hospitals:
+        for h in hospitals:
+            hosp_options += f'<option value="{h["hospital_id"]}">{h["name"]} ({h["district"]}, {h["state"]})</option>'
+    else:
+        hosp_options = '<option value="HOSP-AIIMS-DEL">AIIMS New Delhi</option><option value="HOSP-CMC-VEL">CMC Vellore</option>'
+
+    form_fields = ""
+    if role == "PATIENT":
+        form_fields = f"""
+        <div class="form-group">
+            <label class="form-label">Citizen / Patient Full Name:</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Vikram Patel" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">14-Digit ABHA ID:</label>
+                <input type="text" id="reg_abha" name="abha_number" class="form-control" placeholder="e.g. 91-9988-7766-5544" required>
+            </div>
+            <div class="form-group" style="display:flex; align-items:flex-end;">
+                <button type="button" class="btn btn-secondary btn-sm" style="width:100%; height:40px;" onclick="generateDemoABHA()">
+                    ⚡ Generate Demo ABHA
+                </button>
+            </div>
+        </div>
+        <div class="grid-3">
+            <div class="form-group">
+                <label class="form-label">Date of Birth:</label>
+                <input type="date" name="dob" class="form-control" value="1992-05-15" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Gender:</label>
+                <select name="gender" class="form-control">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Blood Group:</label>
+                <select name="blood_group" class="form-control">
+                    <option value="B+">B+</option>
+                    <option value="O+">O+</option>
+                    <option value="A+">A+</option>
+                    <option value="AB+">AB+</option>
+                    <option value="B-">B-</option>
+                    <option value="O-">O-</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid-3">
+            <div class="form-group">
+                <label class="form-label">State:</label>
+                <input type="text" name="state" class="form-control" placeholder="e.g. Maharashtra" value="Delhi" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">District:</label>
+                <input type="text" name="district" class="form-control" placeholder="e.g. Mumbai City" value="South Delhi" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pincode:</label>
+                <input type="text" name="pincode" class="form-control" placeholder="110029" value="110029">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Mobile Number:</label>
+                <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210" value="+91 98765 00112" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address (Optional):</label>
+                <input type="email" name="email" class="form-control" placeholder="patient@example.com">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Create Username:</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. vikram_patel" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" name="password" class="form-control" placeholder="Create strong password" required>
+            </div>
+        </div>
+        <script>
+        function generateDemoABHA() {{
+            const r1 = Math.floor(1000 + Math.random() * 9000);
+            const r2 = Math.floor(1000 + Math.random() * 9000);
+            const r3 = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('reg_abha').value = '91-' + r1 + '-' + r2 + '-' + r3;
+        }}
+        </script>
+        """
+    elif role == "DOCTOR":
+        form_fields = f"""
+        <div class="form-group">
+            <label class="form-label">Doctor's Full Name (with Title):</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Meera Nambiar, MD" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">National Medical Commission (NMC) License No:</label>
+                <input type="text" name="nmc_id" class="form-control" placeholder="e.g. NMC-MCI-2022-77112" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Clinical Specialty:</label>
+                <select name="specialty" class="form-control">
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Pulmonology">Pulmonology</option>
+                    <option value="Endocrinology">Endocrinology</option>
+                    <option value="Nephrology">Nephrology</option>
+                    <option value="General Medicine">General Medicine</option>
+                    <option value="Oncology">Oncology</option>
+                    <option value="Neurology">Neurology</option>
+                    <option value="Gastroenterology">Gastroenterology</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Primary Hospital / Healthcare Facility Affiliation:</label>
+            <select name="hospital_id" class="form-control" required>
+                {hosp_options}
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Medical Qualifications:</label>
+            <input type="text" name="qualification" class="form-control" placeholder="e.g. MBBS, MD (Medicine), DM (Cardiology)" value="MBBS, MD" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Professional Email:</label>
+                <input type="email" name="email" class="form-control" placeholder="doctor@hospital.edu.in" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone Number:</label>
+                <input type="text" name="phone" class="form-control" placeholder="+91 98111 22334" required>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Create Username:</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. dr_meera" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" name="password" class="form-control" placeholder="Create strong password" required>
+            </div>
+        </div>
+        """
+    elif role == "LAB_TECHNICIAN":
+        form_fields = f"""
+        <div class="form-group">
+            <label class="form-label">Diagnostic Laboratory Legal Entity Name:</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Metropolis Clinical Pathology & Genomics" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">NABL Accreditation Certificate Number:</label>
+                <input type="text" name="nabl_id" class="form-control" placeholder="e.g. NABL-MED-2025-9988" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Accreditation Expiry Date:</label>
+                <input type="date" name="accreditation_expiry" class="form-control" value="2028-12-31" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Associated Hospital (Optional / Select Standalone if independent):</label>
+            <select name="hospital_id" class="form-control">
+                <option value="">-- Independent Standalone Diagnostic Lab --</option>
+                {hosp_options}
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Physical Laboratory Address & City:</label>
+            <input type="text" name="address" class="form-control" placeholder="e.g. Sector 18, Institutional Area, Noida - 201301" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Lab Contact Phone:</label>
+                <input type="text" name="phone" class="form-control" placeholder="+91 98188 00112" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Official Lab Email:</label>
+                <input type="email" name="email" class="form-control" placeholder="contact@labname.in" required>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Create Username:</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. lab_metropolis" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" name="password" class="form-control" placeholder="Create strong password" required>
+            </div>
+        </div>
+        """
+    elif role == "HOSPITAL_ADMIN":
+        form_fields = f"""
+        <div class="form-group">
+            <label class="form-label">Hospital / Healthcare Facility Name:</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Fortis Memorial Research Institute" required>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">National Health Facility Registry (HFR) ID:</label>
+                <input type="text" name="hfr_id" class="form-control" placeholder="e.g. HFR-DEL-000918" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Facility Tier:</label>
+                <select name="tier" class="form-control">
+                    <option value="Tertiary Apex">Tertiary Apex Multi-Specialty</option>
+                    <option value="Super Specialty">Super Specialty Care</option>
+                    <option value="Secondary Hospital">Secondary Hospital</option>
+                    <option value="Primary Health Centre">Primary Health Centre</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">State:</label>
+                <input type="text" name="state" class="form-control" placeholder="e.g. Haryana" value="Delhi" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">District:</label>
+                <input type="text" name="district" class="form-control" placeholder="e.g. Gurugram" value="New Delhi" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Clinical Departments Registered (Hold Ctrl/Cmd to select multiple):</label>
+            <select name="departments" class="form-control" multiple style="height:100px;">
+                <option value="Cardiology" selected>Cardiology</option>
+                <option value="Pulmonology" selected>Pulmonology</option>
+                <option value="Endocrinology" selected>Endocrinology</option>
+                <option value="General Medicine" selected>General Medicine</option>
+                <option value="Nephrology">Nephrology</option>
+                <option value="Oncology">Oncology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Biochemistry">Biochemistry</option>
+            </select>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Administrator Full Name:</label>
+                <input type="text" name="admin_name" class="form-control" placeholder="e.g. Dr. Rajesh Goel (Superintendent)" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Admin Email:</label>
+                <input type="email" name="email" class="form-control" placeholder="admin@hospital.com" required>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Create Username:</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. admin_fortis" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" name="password" class="form-control" placeholder="Create strong password" required>
+            </div>
+        </div>
+        """
+
+    btn_label = {
+        "PATIENT": "Register Patient & Issue Unique Patient Key (UPK) →",
+        "DOCTOR": "Verify Credentials & Issue Unique Doctor Key (UDK) →",
+        "LAB_TECHNICIAN": "Register NABL Diagnostic Laboratory →",
+        "HOSPITAL_ADMIN": "Register Hospital on National HFR Registry →"
+    }.get(role, "Register Entity →")
+
+    return f"""
+    <div style="max-width:760px; margin:20px auto;">
+        <!-- Role Tabs -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:16px;">
+            {tab_links}
+        </div>
+
+        <div class="card" style="box-shadow:var(--shadow-md); border-top:4px solid var(--accent-green);">
+            <div style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #e2e8f0;">
+                <span class="badge badge-success" style="margin-bottom:8px;">ABDM National Ecosystem Onboarding</span>
+                <h2 style="color:var(--primary); font-size:1.6rem; font-weight:800;">Register as {role.replace('_', ' ').title()}</h2>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:4px;">
+                    Compliant with Ayushman Bharat Digital Mission (ABDM) and National Health Authority standards.
+                </p>
+            </div>
+
+            {err_html}
+
+            <form action="/signup" method="POST">
+                <input type="hidden" name="role" value="{role}">
+                {form_fields}
+
+                <div style="margin-top:24px;">
+                    <button type="submit" class="btn btn-success" style="width:100%; padding:12px; font-size:1rem; font-weight:700;">
+                        {btn_label}
+                    </button>
+                </div>
+            </form>
+
+            <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px dashed #cbd5e1; font-size:0.88rem;">
+                Already registered? <a href="/signin?role={role}" style="color:var(--primary); font-weight:700; text-decoration:none;">Sign In here →</a>
+            </div>
+
+            <div style="border-top:1px solid #e2e8f0; margin-top:16px; padding-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
+                <span>🇮🇳 National Medical Commission & NABL Verified</span>
+                <span>🔒 DISHA 2018 & DPDPA 2023 Compliant</span>
+            </div>
+        </div>
+    </div>
     """

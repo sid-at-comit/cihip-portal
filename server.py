@@ -24,8 +24,8 @@ from app.database import (
 )
 from app.security import (
     generate_session_token, generate_prescription_signature,
-    verify_password, evaluate_zero_trust_access, apply_k_anonymity_mask, apply_differential_privacy_noise,
-    generate_upk
+    hash_password, verify_password, evaluate_zero_trust_access, apply_k_anonymity_mask, apply_differential_privacy_noise,
+    generate_upk, generate_udk
 )
 from app.fhir import (
     to_fhir_patient, to_fhir_practitioner, to_fhir_organization,
@@ -40,7 +40,7 @@ from app.views import (
     render_new_encounter_form, render_order_test_form, render_prescribe_form,
     render_doctor_review_report, render_lab_worklist, render_result_entry_form,
     render_hospital_portal, render_research_portal, render_security_portal,
-    render_api_docs_page, render_login_page
+    render_api_docs_page, render_login_page, render_signup_page
 )
 
 # In-memory session store (token -> {user_id, role, name, entity_id, expires_at, is_break_glass})
@@ -163,12 +163,34 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                 del SESSIONS[token]
             return self.redirect("/", set_cookies={SESSION_COOKIE_NAME: "deleted; Max-Age=0"})
 
-        # Login page (Patients, Doctors, Labs, Hospitals, Researchers, Admins)
-        if path == "/login":
+        # Sign In pages for all services (Patients, Doctors, Labs, Hospitals, Researchers, Admins)
+        if path in ("/login", "/signin", "/signin/patient", "/signin/doctor", "/signin/lab", "/signin/hospital", "/signin/researcher", "/signin/admin"):
             role = query.get("role", ["PATIENT"])[0]
+            if "/patient" in path: role = "PATIENT"
+            elif "/doctor" in path: role = "DOCTOR"
+            elif "/lab" in path: role = "LAB_TECHNICIAN"
+            elif "/hospital" in path: role = "HOSPITAL_ADMIN"
+            elif "/researcher" in path: role = "RESEARCHER"
+            elif "/admin" in path: role = "SYSTEM_ADMIN"
             error = query.get("error", [None])[0]
             content = render_login_page(role, error, lang)
-            return self.send_html(render_master("National Portal Login", content, user, lang, "login"))
+            return self.send_html(render_master(f"{role.replace('_', ' ').title()} Sign In", content, user, lang, "signin"))
+
+        # Sign Up / Registration pages for all services
+        if path in ("/signup", "/register", "/signup/patient", "/signup/doctor", "/signup/lab", "/signup/hospital", "/register/patient", "/register/doctor", "/register/lab", "/register/hospital") or path.startswith("/signup/") or path.startswith("/register/"):
+            role = query.get("role", ["PATIENT"])[0]
+            if "/patient" in path: role = "PATIENT"
+            elif "/doctor" in path: role = "DOCTOR"
+            elif "/lab" in path: role = "LAB_TECHNICIAN"
+            elif "/hospital" in path: role = "HOSPITAL_ADMIN"
+            error = query.get("error", [None])[0]
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT hospital_id, name, district, state FROM hospitals")
+            hospitals = [dict(r) for r in cur.fetchall()]
+            conn.close()
+            content = render_signup_page(role, error, lang, hospitals)
+            return self.send_html(render_master(f"{role.replace('_', ' ').title()} Registration", content, user, lang, "signup"))
 
         # API Docs
         if path == "/api/docs":
@@ -321,8 +343,8 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         lang = self.get_language()
         form = self.parse_form_data()
 
-        # User Authentication (Login for Patients, Doctors, Labs, Hospitals, etc.)
-        if path == "/login":
+        # User Authentication (Sign In / Login for Patients, Doctors, Labs, Hospitals, etc.)
+        if path in ("/login", "/signin"):
             role = form.get("role", "PATIENT").upper()
             identifier = form.get("identifier", "").strip()
             password = form.get("password", "").strip()
@@ -404,7 +426,125 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             log_audit_event(identifier or "UNKNOWN", role, "LOGIN_FAILED", "AUTHENTICATION", "AUTH-GATEWAY", "DENIED", details={"identifier": identifier})
             err_msg = "Invalid identifier or password. Please verify your credentials and try again."
             content = render_login_page(role, err_msg, lang)
-            return self.send_html(render_master("Login", content, None, lang), status_code=401)
+            return self.send_html(render_master("Sign In", content, None, lang), status_code=401)
+
+        # Entity Registration / Sign Up (Patients, Doctors, Labs, Hospitals)
+        if path in ("/signup", "/register"):
+            role = form.get("role", "PATIENT").upper()
+            username = form.get("username", "").strip()
+            password = form.get("password", "").strip()
+
+            if not username or not password:
+                err = "Username and Password are required."
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("SELECT hospital_id, name, district, state FROM hospitals")
+                hospitals = [dict(r) for r in cur.fetchall()]
+                conn.close()
+                content = render_signup_page(role, err, lang, hospitals)
+                return self.send_html(render_master("Register", content, None, lang), status_code=400)
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # Check if username already exists
+            cur.execute("SELECT id FROM users WHERE username = ?", (username,))
+            if cur.fetchone():
+                conn.close()
+                err = f"Username '{username}' is already in use. Please choose another username."
+                conn2 = get_db_connection()
+                cur2 = conn2.cursor()
+                cur2.execute("SELECT hospital_id, name, district, state FROM hospitals")
+                hospitals = [dict(r) for r in cur2.fetchall()]
+                conn2.close()
+                content = render_signup_page(role, err, lang, hospitals)
+                return self.send_html(render_master("Register", content, None, lang), status_code=400)
+
+            now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            pwd_hash = hash_password(password)
+            user_id = f"USR-{role[:3]}-{int(time.time())}-{os.urandom(2).hex().upper()}"
+            entity_id = ""
+            name = form.get("name", "").strip() or username
+            email = form.get("email", "").strip()
+            phone = form.get("phone", "").strip()
+
+            if role == "PATIENT":
+                entity_id = generate_upk()
+                abha = form.get("abha_number", "").strip() or f"91-{int(time.time()) % 10000:04d}-5566-7788"
+                dob = form.get("dob", "1995-05-15")
+                gender = form.get("gender", "Male")
+                blood_group = form.get("blood_group", "B+")
+                state = form.get("state", "Delhi")
+                district = form.get("district", "New Delhi")
+                pincode = form.get("pincode", "110001")
+                cur.execute("""
+                    INSERT INTO patients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'ACTIVE', ?)
+                """, (entity_id, abha, name, dob, gender, blood_group, state, district, pincode, phone, email, now_iso))
+
+            elif role == "DOCTOR":
+                entity_id = generate_udk()
+                nmc_id = form.get("nmc_id", "").strip() or f"NMC-MCI-2026-{os.urandom(2).hex().upper()}"
+                specialty = form.get("specialty", "General Medicine")
+                hospital_id = form.get("hospital_id", "HOSP-AIIMS-DEL")
+                qualification = form.get("qualification", "MBBS, MD")
+                cur.execute("""
+                    INSERT INTO doctors VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'VERIFIED', ?)
+                """, (entity_id, nmc_id, name, specialty, hospital_id, qualification, phone, email, now_iso))
+
+            elif role == "LAB_TECHNICIAN":
+                entity_id = f"LAB-{int(time.time())}-{os.urandom(2).hex().upper()}"
+                nabl_id = form.get("nabl_id", "").strip() or f"NABL-MED-2026-{os.urandom(2).hex().upper()}"
+                expiry = form.get("accreditation_expiry", "2028-12-31")
+                hospital_id = form.get("hospital_id") or None
+                address = form.get("address", "Clinical Diagnostic Center")
+                cur.execute("""
+                    INSERT INTO labs VALUES (?, ?, 'HFR-DEL-000101', ?, ?, ?, ?, 'ACCREDITED', ?)
+                """, (entity_id, nabl_id, name, hospital_id, address, expiry, now_iso))
+
+            elif role == "HOSPITAL_ADMIN":
+                entity_id = f"HOSP-{int(time.time())}-{os.urandom(2).hex().upper()}"
+                hfr_id = form.get("hfr_id", "").strip() or f"HFR-DEL-{os.urandom(3).hex().upper()}"
+                state = form.get("state", "Delhi")
+                district = form.get("district", "New Delhi")
+                tier = form.get("tier", "Tertiary Apex")
+                depts = form.get("departments", ["General Medicine"])
+                if isinstance(depts, str): depts = [depts]
+                admin_name = form.get("admin_name", name)
+                cur.execute("""
+                    INSERT INTO hospitals VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+                """, (entity_id, hfr_id, name, state, district, tier, json.dumps(depts), now_iso))
+
+            # Insert into users table
+            cur.execute("""
+                INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+            """, (user_id, username, pwd_hash, role, entity_id, name, email, phone, now_iso))
+
+            conn.commit()
+            conn.close()
+
+            # Auto-login the newly registered user
+            token = generate_session_token()
+            SESSIONS[token] = {
+                "id": user_id,
+                "username": username,
+                "role": role,
+                "entity_id": entity_id,
+                "name": name,
+                "email": email,
+                "expires_at": time.time() + SESSION_EXPIRY_SECONDS,
+                "is_break_glass": False
+            }
+
+            log_audit_event(entity_id, role, "USER_REGISTRATION", role, entity_id, "SUCCESS", details={"name": name, "username": username})
+
+            target = {
+                "PATIENT": "/patient",
+                "DOCTOR": "/doctor",
+                "LAB_TECHNICIAN": "/lab",
+                "HOSPITAL_ADMIN": "/hospital"
+            }.get(role, "/")
+
+            return self.redirect(target, set_cookies={SESSION_COOKIE_NAME: token})
 
         # Emergency break glass activation
         if path == "/doctor/break-glass/activate":
