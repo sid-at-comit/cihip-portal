@@ -189,5 +189,20 @@ class TestLoginWorkflows(unittest.TestCase):
         self.assertTrue(doc["udk"].startswith("UDK-IND-"))
         conn.close()
 
+    def test_15_unauthenticated_role_redirects(self):
+        # Protected endpoints must redirect unauthenticated visitors to clean sign-in pages
+        protected_routes = [
+            ("/patient", "/signin/patient"),
+            ("/doctor", "/signin/doctor"),
+            ("/lab", "/signin/lab"),
+            ("/hospital", "/signin/hospital"),
+            ("/research", "/signin/researcher"),
+            ("/admin/security", "/signin/admin")
+        ]
+        for route, expected_redirect in protected_routes:
+            code, hdrs, _ = execute_mock_request("GET", route)
+            self.assertEqual(code, 302)
+            self.assertEqual(hdrs.get("location"), expected_redirect)
+
 if __name__ == "__main__":
     unittest.main()

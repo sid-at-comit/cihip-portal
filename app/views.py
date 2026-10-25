@@ -41,11 +41,11 @@ def render_master(
         "GUEST": '<span class="badge badge-secondary">Guest Citizen</span>'
     }.get(role, '<span class="badge badge-secondary">User</span>')
 
-    # Emergency break glass pill (shown for doctors)
+    # Emergency break glass button (shown for doctors)
     break_glass_html = ""
     if role == "DOCTOR":
         break_glass_html = """
-        <a href="/doctor/break-glass-modal" class="demo-pill emergency">
+        <a href="/doctor/break-glass-modal" class="btn btn-danger btn-sm" style="font-weight:700;">
             🚨 Break-Glass Emergency
         </a>
         """
@@ -98,10 +98,13 @@ def render_master(
         <a href="/admin/security" class="nav-item {'active' if active_nav == 'admin' else ''}">{t('system_security', lang)}</a>
         """
 
-    # Always provide API docs link, Database link, Sign In link, and Register link
+    # Public Navigation Links
+    if not user:
+        nav_items += f"""
+        <a href="/signin" class="nav-item {'active' if active_nav in ('signin', 'login') else ''}">🔐 Sign In</a>
+        <a href="/signup" class="nav-item {'active' if active_nav in ('signup', 'register') else ''}">📝 Register</a>
+        """
     nav_items += f"""
-    <a href="/signin" class="nav-item {'active' if active_nav in ('signin', 'login') else ''}">🔐 Sign In</a>
-    <a href="/signup" class="nav-item {'active' if active_nav in ('signup', 'register') else ''}">📝 Register</a>
     <a href="/admin/database" class="nav-item {'active' if active_nav == 'database' else ''}">🗄️ Database</a>
     <a href="/api/docs" class="nav-item {'active' if active_nav == 'api' else ''}">{t('api_docs', lang)}</a>
     """
@@ -109,7 +112,8 @@ def render_master(
     user_info_html = ""
     if user:
         user_info_html = f"""
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            {break_glass_html}
             <div style="text-align:right;">
                 <div style="font-weight:700; font-size:0.85rem; color:var(--primary);">{html.escape(user.get('name', 'User'))}</div>
                 <div style="font-size:0.75rem;">{role_badge} <span style="color:#64748b; font-family:monospace;">{html.escape(user.get('entity_id', ''))}</span></div>
@@ -119,7 +123,7 @@ def render_master(
         """
     else:
         user_info_html = f"""
-        <div style="display:flex; gap:6px;">
+        <div style="display:flex; gap:8px;">
             <a href="/signin" class="btn btn-secondary btn-sm">Sign In</a>
             <a href="/signup" class="btn btn-primary btn-sm">Register</a>
         </div>
@@ -166,24 +170,10 @@ def render_master(
         </div>
     </header>
 
-    <div class="demo-bar">
-        <div class="demo-container">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-weight:700; color:#0b3954; font-size:0.8rem;">⚡ {t('switch_role', lang)}:</span>
-                <div class="demo-pills">
-                    <a href="/demo-switch?role=PATIENT" class="demo-pill {'active' if role == 'PATIENT' else ''}">👤 Patient (Rajesh)</a>
-                    <a href="/demo-switch?role=DOCTOR" class="demo-pill {'active' if role == 'DOCTOR' else ''}">🩺 Doctor (Dr. Priya)</a>
-                    <a href="/demo-switch?role=LAB_TECHNICIAN" class="demo-pill {'active' if role == 'LAB_TECHNICIAN' else ''}">🔬 Lab Tech (Ramesh)</a>
-                    <a href="/demo-switch?role=HOSPITAL_ADMIN" class="demo-pill {'active' if role == 'HOSPITAL_ADMIN' else ''}">🏥 Hospital Admin (AIIMS)</a>
-                    <a href="/demo-switch?role=RESEARCHER" class="demo-pill {'active' if role == 'RESEARCHER' else ''}">📊 Researcher (ICMR)</a>
-                    <a href="/demo-switch?role=SYSTEM_ADMIN" class="demo-pill {'active' if role == 'SYSTEM_ADMIN' else ''}">🛡️ Zero-Trust SecOps</a>
-                </div>
-            </div>
-            {break_glass_html}
-        </div>
-    </div>
-
     <main class="main-wrapper">
+        {flash_html}
+        {content}
+    </main>
         {flash_html}
         {content}
     </main>
@@ -219,8 +209,8 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     Federated health data exchange connecting hospitals, diagnostic laboratories, and clinicians across India through <strong>Unique Patient Keys (UPK)</strong> and <strong>Unique Doctor Keys (UDK)</strong> with full patient consent controls and tamper-evident auditability.
                 </p>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <a href="/demo-switch?role=PATIENT" class="btn btn-primary" style="background:#f48c06; color:#fff;">Explore as Patient</a>
-                    <a href="/demo-switch?role=DOCTOR" class="btn btn-secondary">Explore as Clinician</a>
+                    <a href="/signin" class="btn btn-primary" style="background:#f48c06; color:#fff;">Sign In to Portal</a>
+                    <a href="/signup" class="btn btn-secondary">Register New Account</a>
                     <a href="/api/docs" class="btn btn-secondary">Interactive FHIR APIs</a>
                 </div>
             </div>
@@ -289,8 +279,8 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=PATIENT" class="btn btn-primary btn-sm" style="flex:1;">Patient Login →</a>
-                    <a href="/demo-switch?role=PATIENT" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/patient" class="btn btn-primary btn-sm" style="flex:1;">Sign In →</a>
+                    <a href="/signup/patient" class="btn btn-secondary btn-sm">Register</a>
                 </div>
             </div>
 
@@ -306,8 +296,8 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=DOCTOR" class="btn btn-primary btn-sm" style="flex:1;">Doctor Login →</a>
-                    <a href="/demo-switch?role=DOCTOR" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/doctor" class="btn btn-primary btn-sm" style="flex:1;">Sign In →</a>
+                    <a href="/signup/doctor" class="btn btn-secondary btn-sm">Register</a>
                 </div>
             </div>
 
@@ -323,8 +313,8 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=LAB_TECHNICIAN" class="btn btn-primary btn-sm" style="flex:1;">Lab Login →</a>
-                    <a href="/demo-switch?role=LAB_TECHNICIAN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/lab" class="btn btn-primary btn-sm" style="flex:1;">Sign In →</a>
+                    <a href="/signup/lab" class="btn btn-secondary btn-sm">Register</a>
                 </div>
             </div>
 
@@ -340,8 +330,8 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=HOSPITAL_ADMIN" class="btn btn-primary btn-sm" style="flex:1;">Hospital Login →</a>
-                    <a href="/demo-switch?role=HOSPITAL_ADMIN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/hospital" class="btn btn-primary btn-sm" style="flex:1;">Sign In →</a>
+                    <a href="/signup/hospital" class="btn btn-secondary btn-sm">Register</a>
                 </div>
             </div>
 
@@ -357,8 +347,7 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=RESEARCHER" class="btn btn-primary btn-sm" style="flex:1;">Researcher Login →</a>
-                    <a href="/demo-switch?role=RESEARCHER" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/researcher" class="btn btn-primary btn-sm" style="flex:1;">Researcher Sign In →</a>
                 </div>
             </div>
 
@@ -374,8 +363,7 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                     </p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="/login?role=SYSTEM_ADMIN" class="btn btn-primary btn-sm" style="flex:1;">SecOps Login →</a>
-                    <a href="/demo-switch?role=SYSTEM_ADMIN" class="btn btn-secondary btn-sm" title="Instant Demo">⚡ Quick Demo</a>
+                    <a href="/signin/admin" class="btn btn-primary btn-sm" style="flex:1;">SecOps Sign In →</a>
                 </div>
             </div>
         </div>
@@ -1958,9 +1946,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-success">ABHA / UPK Unified Access</span>',
             "id_label": "ABHA Number (14-digit) or Username / UPK:",
             "id_placeholder": "e.g. 91-4567-8901-2345 or patient_rajesh",
-            "demo_user": "patient_rajesh",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: Rajesh Sharma (ABHA: 91-4567-8901-2345 / Username: patient_rajesh)",
             "redirect_note": "Access your Longitudinal Health Record, e-prescriptions with QR codes, and consent dashboard."
         },
         "DOCTOR": {
@@ -1968,9 +1953,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-primary">NMC / HPR Verified Clinicians</span>',
             "id_label": "NMC Registration Number or Username / UDK:",
             "id_placeholder": "e.g. NMC-MCI-2015-88492 or doctor_priya",
-            "demo_user": "doctor_priya",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: Dr. Priya Nair, MD (AIIMS Cardiology / NMC: NMC-MCI-2015-88492)",
             "redirect_note": "Conduct consultations, record encounters with SNOMED CT, order tests, and issue PKI-signed prescriptions."
         },
         "LAB_TECHNICIAN": {
@@ -1978,9 +1960,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-purple">NABL Accredited Diagnostics</span>',
             "id_label": "NABL Certificate Number or Username / Lab ID:",
             "id_placeholder": "e.g. NABL-MED-2024-9912 or lab_ramesh",
-            "demo_user": "lab_ramesh",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: Ramesh Verma (Apex NABL Diagnostics / NABL: NABL-MED-2024-9912)",
             "redirect_note": "Manage prioritized test queues, input structured LOINC observations, and authorize diagnostic reports."
         },
         "HOSPITAL_ADMIN": {
@@ -1988,9 +1967,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-warning">HFR Registered Institutions</span>',
             "id_label": "HFR Facility Registry ID or Username:",
             "id_placeholder": "e.g. HFR-DEL-000101 or admin_aiims",
-            "demo_user": "admin_aiims",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: AIIMS New Delhi Administration (HFR: HFR-DEL-000101)",
             "redirect_note": "Supervise clinical departments, verify doctor credentials, and audit facility data exchange metrics."
         },
         "RESEARCHER": {
@@ -1998,9 +1974,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-info">De-Identified Public Health Analytics</span>',
             "id_label": "Researcher Registry ID or Username:",
             "id_placeholder": "e.g. ICMR-RES-2026 or researcher_sunita",
-            "demo_user": "researcher_sunita",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: Dr. Sunita Kulkarni (ICMR Epidemiologist / ICMR-RES-2026)",
             "redirect_note": "Query privacy-preserved cohorts with k-anonymity (k >= 50) and export de-identified FHIR bundles."
         },
         "SYSTEM_ADMIN": {
@@ -2008,9 +1981,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             "badge": '<span class="badge badge-danger">National Governance & Ledger Audit</span>',
             "id_label": "Security Admin Username / ID:",
             "id_placeholder": "e.g. admin_cihip or CIHIP-HQ-DELHI",
-            "demo_user": "admin_cihip",
-            "demo_pass": "Admin@123",
-            "demo_hint": "Demo: Vikramaditya Sen (Zero-Trust SecOps / CIHIP-HQ-DELHI)",
             "redirect_note": "Monitor real-time zero-trust access evaluations and verify SHA-256 blockchain audit ledger integrity."
         }
     }.get(role, {})
@@ -2064,17 +2034,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
                     <input type="password" id="login_password" name="password" class="form-control" placeholder="••••••••" required>
                 </div>
 
-                <!-- One-click Demo Credentials Helper -->
-                <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; padding:10px 14px; margin:16px 0; font-size:0.82rem; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <strong style="color:var(--primary);">💡 Quick Test Account:</strong><br>
-                        <span style="color:#475569;">{meta['demo_hint']}</span>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemo('{meta['demo_user']}', '{meta['demo_pass']}')">
-                        ⚡ Auto-fill
-                    </button>
-                </div>
-
                 <div style="margin-top:20px;">
                     <button type="submit" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.95rem; font-weight:700;">
                         Secure Sign In →
@@ -2092,13 +2051,6 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
             </div>
         </div>
     </div>
-
-    <script>
-    function fillDemo(u, p) {{
-        document.getElementById('login_identifier').value = u;
-        document.getElementById('login_password').value = p;
-    }}
-    </script>
     """
 
 
@@ -2148,16 +2100,9 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
             <label class="form-label">Citizen / Patient Full Name:</label>
             <input type="text" name="name" class="form-control" placeholder="e.g. Vikram Patel" required>
         </div>
-        <div class="grid-2">
-            <div class="form-group">
-                <label class="form-label">14-Digit ABHA ID:</label>
-                <input type="text" id="reg_abha" name="abha_number" class="form-control" placeholder="e.g. 91-9988-7766-5544" required>
-            </div>
-            <div class="form-group" style="display:flex; align-items:flex-end;">
-                <button type="button" class="btn btn-secondary btn-sm" style="width:100%; height:40px;" onclick="generateDemoABHA()">
-                    ⚡ Generate Demo ABHA
-                </button>
-            </div>
+        <div class="form-group">
+            <label class="form-label">14-Digit ABHA ID (Ayushman Bharat Health Account):</label>
+            <input type="text" id="reg_abha" name="abha_number" class="form-control" placeholder="e.g. 91-9988-7766-5544" required>
         </div>
         <div class="grid-3">
             <div class="form-group">
@@ -2218,14 +2163,6 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
                 <input type="password" name="password" class="form-control" placeholder="Create strong password" required>
             </div>
         </div>
-        <script>
-        function generateDemoABHA() {{
-            const r1 = Math.floor(1000 + Math.random() * 9000);
-            const r2 = Math.floor(1000 + Math.random() * 9000);
-            const r3 = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('reg_abha').value = '91-' + r1 + '-' + r2 + '-' + r3;
-        }}
-        </script>
         """
     elif role == "DOCTOR":
         form_fields = f"""

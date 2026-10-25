@@ -156,10 +156,18 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         if path.startswith("/static/"):
             return self.serve_static(path)
 
-        # Demo Role Switcher
+        # Role switch redirect to signin
         if path == "/demo-switch":
             role = query.get("role", ["PATIENT"])[0]
-            return self.handle_demo_switch(role)
+            role_routes = {
+                "PATIENT": "/signin/patient",
+                "DOCTOR": "/signin/doctor",
+                "LAB_TECHNICIAN": "/signin/lab",
+                "HOSPITAL_ADMIN": "/signin/hospital",
+                "RESEARCHER": "/signin/researcher",
+                "SYSTEM_ADMIN": "/signin/admin"
+            }
+            return self.redirect(role_routes.get(role, "/signin"))
 
         # Change language
         if path == "/set-lang":
@@ -248,20 +256,19 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
 
         # 2. Patient Routes
         if path == "/patient":
-            # Auto-switch to patient Rajesh if not logged in
             if not user or user.get("role") != "PATIENT":
-                return self.handle_demo_switch("PATIENT", redirect_url="/patient")
+                return self.redirect("/signin/patient")
             return self.handle_patient_dashboard(user, lang)
 
         if path == "/patient/lhr":
             if not user or user.get("role") != "PATIENT":
-                return self.handle_demo_switch("PATIENT", redirect_url="/patient/lhr")
+                return self.redirect("/signin/patient")
             filter_type = query.get("filter", ["ALL"])[0]
             return self.handle_patient_lhr(user, filter_type, lang)
 
         if path == "/patient/consents":
             if not user or user.get("role") != "PATIENT":
-                return self.handle_demo_switch("PATIENT", redirect_url="/patient/consents")
+                return self.redirect("/signin/patient")
             return self.handle_patient_consents_view(user, lang)
 
         if path.startswith("/patient/prescription/"):
@@ -275,77 +282,79 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         # 3. Doctor Routes
         if path == "/doctor":
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url="/doctor")
+                return self.redirect("/signin/doctor")
             return self.handle_doctor_dashboard(user, lang)
 
         if path == "/doctor/search":
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url=self.path)
+                return self.redirect("/signin/doctor")
             q = query.get("query", query.get("upk", [""]))[0]
             return self.handle_doctor_patient_search(q, user, lang)
 
         if path == "/doctor/encounter/new":
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url=self.path)
+                return self.redirect("/signin/doctor")
             upk = query.get("upk", [""])[0]
             return self.handle_new_encounter_view(upk, user, lang)
 
         if path == "/doctor/order/new":
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url=self.path)
+                return self.redirect("/signin/doctor")
             upk = query.get("upk", [""])[0]
             return self.handle_new_order_view(upk, user, lang)
 
         if path == "/doctor/prescribe/new":
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url=self.path)
+                return self.redirect("/signin/doctor")
             upk = query.get("upk", [""])[0]
             return self.handle_new_prescribe_view(upk, user, lang)
 
         if path.startswith("/doctor/review-report/"):
             if not user or user.get("role") != "DOCTOR":
-                return self.handle_demo_switch("DOCTOR", redirect_url=self.path)
+                return self.redirect("/signin/doctor")
             report_id = path.split("/")[-1]
             return self.handle_doctor_review_report_view(report_id, user, lang)
 
         if path == "/doctor/break-glass-modal":
+            if not user or user.get("role") != "DOCTOR":
+                return self.redirect("/signin/doctor")
             upk = query.get("upk", ["UPK-IND-2026-9041"])[0]
             return self.handle_break_glass_modal(upk, user, lang)
 
         # 4. Lab Routes
         if path == "/lab":
             if not user or user.get("role") != "LAB_TECHNICIAN":
-                return self.handle_demo_switch("LAB_TECHNICIAN", redirect_url="/lab")
+                return self.redirect("/signin/lab")
             return self.handle_lab_dashboard(user, lang)
 
         if path.startswith("/lab/entry/"):
             if not user or user.get("role") != "LAB_TECHNICIAN":
-                return self.handle_demo_switch("LAB_TECHNICIAN", redirect_url=self.path)
+                return self.redirect("/signin/lab")
             order_id = path.split("/")[-1]
             return self.handle_lab_entry_view(order_id, user, lang)
 
         if path.startswith("/lab/amend/"):
             if not user or user.get("role") != "LAB_TECHNICIAN":
-                return self.handle_demo_switch("LAB_TECHNICIAN", redirect_url=self.path)
+                return self.redirect("/signin/lab")
             report_id = path.split("/")[-1]
             return self.handle_lab_amend_view(report_id, user, lang)
 
         # 5. Hospital Admin Routes
         if path == "/hospital":
             if not user or user.get("role") != "HOSPITAL_ADMIN":
-                return self.handle_demo_switch("HOSPITAL_ADMIN", redirect_url="/hospital")
+                return self.redirect("/signin/hospital")
             return self.handle_hospital_admin_dashboard(user, lang)
 
         # 6. Research Routes
         if path == "/research":
             if not user or user.get("role") != "RESEARCHER":
-                return self.handle_demo_switch("RESEARCHER", redirect_url="/research")
+                return self.redirect("/signin/researcher")
             return self.handle_research_dashboard(user, query, lang)
 
         # 7. Security Admin Routes
         if path == "/admin/security":
             if not user or user.get("role") != "SYSTEM_ADMIN":
-                return self.handle_demo_switch("SYSTEM_ADMIN", redirect_url="/admin/security")
+                return self.redirect("/signin/admin")
             return self.handle_security_dashboard(user, lang)
 
         # 404 Fallback
