@@ -174,9 +174,6 @@ def render_master(
         {flash_html}
         {content}
     </main>
-        {flash_html}
-        {content}
-    </main>
 
     <footer>
         <div class="footer-container">
@@ -2714,7 +2711,7 @@ def render_database_explorer(
     default_query = query_input or f"SELECT * FROM {active_table} LIMIT 25;"
 
     return f"""
-    <div class="main-wrapper" style="max-width:1300px; margin:0 auto; padding:24px 16px;">
+    <div style="max-width:1300px; margin:0 auto;">
         <!-- Header -->
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
             <div>
