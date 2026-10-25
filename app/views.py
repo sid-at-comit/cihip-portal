@@ -200,36 +200,42 @@ def render_master(
 def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
     """Render national landing portal page with system stats, ecosystem architecture and quick links."""
     return f"""
-    <div class="card" style="background: linear-gradient(135deg, #0b3954 0%, #0d4b6e 100%); color:#fff; border:none; margin-bottom:24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
-            <div style="max-width:700px;">
-                <span class="badge" style="background:rgba(255,255,255,0.2); color:#fff; margin-bottom:12px;">National Digital Health Infrastructure</span>
-                <h2 style="font-size:2rem; font-weight:800; margin-bottom:10px; line-height:1.2;">Unifying India's Healthcare Ecosystem</h2>
-                <p style="font-size:1rem; opacity:0.9; margin-bottom:20px;">
-                    Federated health data exchange connecting hospitals, diagnostic laboratories, and clinicians across India through <strong>Unique Patient Keys (UPK)</strong> and <strong>Unique Doctor Keys (UDK)</strong> with full patient consent controls and tamper-evident auditability.
+    <!-- Hero Banner -->
+    <div class="card" style="background: linear-gradient(135deg, #091a2b 0%, #0f2942 50%, #173b5e 100%); color:#ffffff; border:none; margin-bottom:28px; padding:36px; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:28px;">
+            <div style="max-width:720px;">
+                <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18); padding:5px 14px; border-radius:9999px; margin-bottom:16px;">
+                    <span style="font-size:0.78rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#93c5fd;">Government of India • ABDM & FHIR R4 Compliant</span>
+                </div>
+                <h1 style="font-size:2.2rem; font-weight:800; line-height:1.2; letter-spacing:-0.03em; margin-bottom:12px;">
+                    Centralized Indian Healthcare Information Portal
+                </h1>
+                <p style="font-size:1.02rem; color:#cbd5e1; line-height:1.6; margin-bottom:24px;">
+                    National federated health data exchange securely interconnecting citizens, healthcare facilities, diagnostic laboratories, and clinicians across India through <strong>Unique Patient Keys (UPK)</strong> and <strong>Unique Doctor Keys (UDK)</strong> with full patient consent governance and blockchain-grade auditability.
                 </p>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <a href="/signin" class="btn btn-primary" style="background:#f48c06; color:#fff;">Sign In to Portal</a>
-                    <a href="/signup" class="btn btn-secondary">Register New Account</a>
-                    <a href="/api/docs" class="btn btn-secondary">Interactive FHIR APIs</a>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <a href="/signin" class="btn btn-primary" style="background:#ea580c; color:#ffffff; font-weight:700; padding:10px 22px; box-shadow:0 2px 4px rgba(234,88,12,0.3);">Sign In to Portal</a>
+                    <a href="/signup" class="btn btn-secondary" style="background:rgba(255,255,255,0.12); color:#ffffff; border-color:rgba(255,255,255,0.25); font-weight:700; padding:10px 22px;">Register New Account</a>
+                    <a href="/api/docs" class="btn btn-secondary" style="background:rgba(255,255,255,0.08); color:#93c5fd; border-color:rgba(255,255,255,0.18); font-weight:600; padding:10px 18px;">FHIR R4 APIs</a>
                 </div>
             </div>
-            <div style="background:rgba(255,255,255,0.08); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); min-width:280px;">
-                <div style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; opacity:0.8;">Zero-Trust Live Status</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#4ade80; display:flex; align-items:center; gap:8px;">
-                    <span>●</span> 99.99% Availability
+            <div style="background:rgba(255,255,255,0.06); padding:24px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); min-width:300px; backdrop-filter:blur(8px);">
+                <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#93c5fd; margin-bottom:8px;">Exchange Network Status</div>
+                <div style="font-size:1.5rem; font-weight:800; color:#34d399; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1rem;">●</span> 99.99% Operational
                 </div>
-                <div style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
-                    Cryptographic Ledger: <strong style="color:#fde047;">VERIFIED INTACT</strong><br>
-                    FHIR Standard: <strong>R4.0.1 (ABDM IG v6.5.0)</strong><br>
-                    Encryption: <strong>TLS 1.3 / AES-256-GCM</strong>
+                <div style="margin-top:14px; font-size:0.82rem; color:#cbd5e1; line-height:1.7;">
+                    <div>✓ ABDM Implementation Guide: <strong>v6.5.0</strong></div>
+                    <div>✓ Semantic Standard: <strong>HL7 FHIR R4.0.1</strong></div>
+                    <div>✓ Cryptographic Audit Trail: <strong style="color:#fde047;">VERIFIED INTACT</strong></div>
+                    <div>✓ Transport Security: <strong>TLS 1.3 / AES-256</strong></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Live System Metrics -->
-    <div class="grid-4" style="margin-bottom:24px;">
+    <!-- Live System Metrics Grid -->
+    <div class="grid-4" style="margin-bottom:28px;">
         <div class="stat-box">
             <div class="stat-icon" style="background:#e0f2fe; color:#0369a1;">🏥</div>
             <div>
@@ -252,7 +258,7 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
             </div>
         </div>
         <div class="stat-box">
-            <div class="stat-icon" style="background:#fef3c7; color:#b45309;">📜</div>
+            <div class="stat-icon" style="background:#fef3c7; color:#b45309;">🔒</div>
             <div>
                 <div class="stat-val">{stats.get('audit_count', 0)}</div>
                 <div class="stat-label">Audited Exchange Events</div>
@@ -261,20 +267,24 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
     </div>
 
     <!-- 6 Role Portals Grid -->
-    <div class="card">
+    <div class="card" style="padding:28px;">
         <div class="card-header">
-            <div class="card-title">🌐 CIHIP Phase 1 Portal Subsystems</div>
+            <div>
+                <div class="card-title">🌐 CIHIP Phase 1 Portal Subsystems</div>
+                <div style="font-size:0.82rem; color:#64748b; margin-top:3px;">Select your designated healthcare ecosystem workspace to sign in or register:</div>
+            </div>
             <span class="badge badge-primary">Zero-Trust Role Based Access</span>
         </div>
         <div class="grid-3">
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Patient Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #15803d; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">👤</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">👤</span>
                         <span class="badge badge-success">Citizen & Patient</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">Patient Health Portal</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Patient Health Portal</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         Citizens access their Longitudinal Health Record (LHR), download digitally signed prescriptions with verifiable QR codes, and exercise granular consent control per DISHA & ABDM.
                     </p>
                 </div>
@@ -284,14 +294,15 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                 </div>
             </div>
 
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Doctor Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #1d4ed8; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">🩺</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">🩺</span>
                         <span class="badge badge-primary">Doctor / Specialist</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">Clinical Consultation Desk</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Clinical Consultation Desk</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         Clinicians search patients by UPK/ABHA, record encounters with SNOMED CT diagnoses, place LOINC diagnostic orders, review lab reports with abnormal flags, and issue PKI-signed e-prescriptions.
                     </p>
                 </div>
@@ -301,14 +312,15 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                 </div>
             </div>
 
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Lab Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #7e22ce; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">🔬</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">🔬</span>
                         <span class="badge badge-purple">Diagnostic Laboratory</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">Lab Worklist & Reporting</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Lab Worklist & Reporting</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         NABL technicians receive routed test orders, input structured observations against universal LOINC reference standards, generate official reports, and handle amendment workflows.
                     </p>
                 </div>
@@ -318,14 +330,15 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                 </div>
             </div>
 
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Hospital Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #d97706; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">🏥</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">🏥</span>
                         <span class="badge badge-warning">Hospital Administration</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">HFR Facility Management</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">HFR Facility Management</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         Hospital administrators supervise department registrations, verify clinical doctor rosters, review institutional order volumes, and audit facility data access metrics.
                     </p>
                 </div>
@@ -335,14 +348,15 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                 </div>
             </div>
 
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Research Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #0284c7; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">📊</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">📊</span>
                         <span class="badge badge-info">Public Health & ICMR</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">Research & Epidemiological Lake</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Research & Epidemiological Lake</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         Authorized researchers query de-identified clinical datasets with guaranteed k-anonymity (k &ge; 50), analyze disease incidence trends, and export secure CSV/JSON/FHIR Bundles.
                     </p>
                 </div>
@@ -351,14 +365,15 @@ def render_landing_page(stats: Dict[str, Any], lang: str = "en") -> str:
                 </div>
             </div>
 
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- SecOps Card -->
+            <div style="border:1px solid #e2e8f0; border-top:4px solid #dc2626; border-radius:10px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:#ffffff; box-shadow:var(--shadow-xs);">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:1.8rem;">🛡️</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:1.6rem;">🛡️</span>
                         <span class="badge badge-danger">SecOps & Governance</span>
                     </div>
-                    <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:8px;">Zero-Trust & Audit Ledger</h3>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Zero-Trust & Audit Ledger</h3>
+                    <p style="font-size:0.86rem; color:#64748b; line-height:1.5; margin-bottom:18px;">
                         Security administrators monitor real-time Zero-Trust ABAC policy evaluations and verify the cryptographic integrity of the SHA-256 blockchain-style immutable audit chain.
                     </p>
                 </div>
@@ -382,17 +397,17 @@ def render_patient_dashboard(patient: Dict[str, Any], encounters: List[Dict[str,
         med_names = ", ".join([m["name"] for m in meds])
         rx_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{rx['rx_id']}</td>
-            <td>{rx['issue_time'][:10]}</td>
-            <td><strong>{med_names}</strong></td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{rx['rx_id']}</td>
+            <td style="color:#64748b; font-size:0.84rem;">{rx['issue_time'][:10]}</td>
+            <td><strong>{html.escape(med_names)}</strong></td>
             <td><span class="badge badge-success">Digitally Signed</span></td>
             <td>
-                <a href="/patient/prescription/{rx['rx_id']}" class="btn btn-secondary btn-sm">View & Print Rx 🖨️</a>
+                <a href="/patient/prescription/{rx['rx_id']}" class="btn btn-secondary btn-sm">View & Print Rx</a>
             </td>
         </tr>
         """
     if not rx_rows:
-        rx_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No prescriptions on file.</td></tr>'
+        rx_rows = '<tr><td colspan="5" style="text-align:center; padding:24px; color:#94a3b8;">No prescriptions on file.</td></tr>'
 
     # Recent reports preview
     rpt_rows = ""
@@ -406,61 +421,78 @@ def render_patient_dashboard(patient: Dict[str, Any], encounters: List[Dict[str,
 
         rpt_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{rpt['report_id']}</td>
-            <td>{rpt['report_time'][:10]}</td>
-            <td><strong>{rpt['test_name']}</strong> ({rpt['loinc_code']})</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{rpt['report_id']}</td>
+            <td style="color:#64748b; font-size:0.84rem;">{rpt['report_time'][:10]}</td>
+            <td><strong>{html.escape(rpt['test_name'])}</strong> <span style="font-size:0.75rem; color:#64748b;">({rpt['loinc_code']})</span></td>
             <td>{flag_badge}</td>
             <td>
-                <a href="/patient/report/{rpt['report_id']}" class="btn btn-secondary btn-sm">View Lab Report 📄</a>
+                <a href="/patient/report/{rpt['report_id']}" class="btn btn-secondary btn-sm">View Lab Report</a>
             </td>
         </tr>
         """
     if not rpt_rows:
-        rpt_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No diagnostic reports on file.</td></tr>'
+        rpt_rows = '<tr><td colspan="5" style="text-align:center; padding:24px; color:#94a3b8;">No diagnostic reports on file.</td></tr>'
+
+    initials = patient['name'][0].upper() if patient.get('name') else 'P'
 
     return f"""
-    <!-- Patient Identity Card -->
-    <div class="card" style="border-left:5px solid var(--primary);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-            <div>
-                <span class="badge badge-success" style="margin-bottom:8px;">ABHA Verified Citizen</span>
-                <h2 style="font-size:1.6rem; color:var(--primary); margin-bottom:4px;">{patient['name']}</h2>
-                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.88rem; color:#475569; margin-top:6px;">
-                    <div><strong>ABHA ID:</strong> <span style="font-family:monospace; font-weight:700; color:var(--primary);">{abha}</span></div>
-                    <div><strong>UPK:</strong> <span style="font-family:monospace; color:#64748b;">{upk}</span></div>
-                    <div><strong>DOB:</strong> {patient['dob']} ({patient['gender']})</div>
-                    <div><strong>Blood Group:</strong> <span class="badge badge-danger">{patient.get('blood_group', 'B+')}</span></div>
-                    <div><strong>State:</strong> {patient['state']}, {patient['district']}</div>
+    <!-- Patient Identity & ABHA Health Card -->
+    <div class="card" style="padding:28px; border-left:5px solid #059669; background:#ffffff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+            <div style="display:flex; align-items:flex-start; gap:18px;">
+                <div style="width:58px; height:58px; border-radius:12px; background:linear-gradient(135deg, #0f2942 0%, #1e4976 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:800; flex-shrink:0; box-shadow:var(--shadow-sm);">
+                    {initials}
+                </div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span class="badge badge-success">ABHA Verified Citizen</span>
+                        <span class="badge badge-info">{patient['state']}</span>
+                    </div>
+                    <h2 style="font-size:1.6rem; font-weight:800; color:var(--primary); margin:0 0 8px;">{patient['name']}</h2>
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:0.86rem; color:#475569;">
+                        <div><strong>ABHA ID:</strong> <span style="font-family:monospace; font-weight:700; color:var(--primary);">{abha}</span></div>
+                        <div><strong>UPK:</strong> <span style="font-family:monospace; color:#64748b;">{upk}</span></div>
+                        <div><strong>DOB:</strong> {patient['dob']} ({patient['gender']})</div>
+                        <div><strong>Blood Group:</strong> <span class="badge badge-danger" style="margin-left:4px;">{patient.get('blood_group', 'B+')}</span></div>
+                        <div><strong>District:</strong> {patient['district']}</div>
+                    </div>
                 </div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <a href="/patient/lhr" class="btn btn-primary">Chronological LHR Timeline ⏳</a>
-                <a href="/patient/consents" class="btn btn-secondary">Manage Consents 🔒</a>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <a href="/patient/lhr" class="btn btn-primary">Longitudinal Health Record</a>
+                <a href="/patient/consents" class="btn btn-secondary">Consent Manager</a>
             </div>
         </div>
     </div>
 
-    <!-- Quick Stats -->
-    <div class="grid-3" style="margin-bottom:20px;">
+    <!-- Quick Stats Metric Cards -->
+    <div class="grid-4" style="margin-bottom:24px;">
         <div class="stat-box">
-            <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;">🏥</div>
+            <div class="stat-icon" style="background:#eff6ff; color:#1d4ed8;">🏥</div>
             <div>
                 <div class="stat-val">{len(encounters)}</div>
                 <div class="stat-label">Hospital Consultations</div>
             </div>
         </div>
         <div class="stat-box">
-            <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce;">🧪</div>
+            <div class="stat-icon" style="background:#faf5ff; color:#7e22ce;">🔬</div>
             <div>
                 <div class="stat-val">{len(reports)}</div>
                 <div class="stat-label">Diagnostic Reports</div>
             </div>
         </div>
         <div class="stat-box">
-            <div class="stat-icon" style="background:#dcfce7; color:#15803d;">💊</div>
+            <div class="stat-icon" style="background:#ecfdf5; color:#047857;">💊</div>
             <div>
                 <div class="stat-val">{len(prescriptions)}</div>
                 <div class="stat-label">Active E-Prescriptions</div>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon" style="background:#fffbeb; color:#b45309;">🔒</div>
+            <div>
+                <div class="stat-val">{len(consents)}</div>
+                <div class="stat-label">Active Consents</div>
             </div>
         </div>
     </div>
@@ -468,7 +500,10 @@ def render_patient_dashboard(patient: Dict[str, Any], encounters: List[Dict[str,
     <!-- Active Prescriptions -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">💊 Digitally Signed E-Prescriptions</div>
+            <div>
+                <div class="card-title">💊 Digitally Signed E-Prescriptions</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Issued under National Medical Commission digital signature standards:</div>
+            </div>
             <a href="/patient/lhr?type=prescription" class="btn btn-secondary btn-sm">View All in LHR →</a>
         </div>
         <div class="table-responsive">
@@ -478,7 +513,7 @@ def render_patient_dashboard(patient: Dict[str, Any], encounters: List[Dict[str,
                         <th>Rx ID</th>
                         <th>Issued Date</th>
                         <th>Prescribed Medications</th>
-                        <th>Digital Signature</th>
+                        <th>Digital Seal</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -492,7 +527,10 @@ def render_patient_dashboard(patient: Dict[str, Any], encounters: List[Dict[str,
     <!-- Recent Diagnostic Reports -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔬 Recent Diagnostic Laboratory Reports</div>
+            <div>
+                <div class="card-title">🔬 Recent Diagnostic Laboratory Reports</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Standardized LOINC lab observations from accredited facilities:</div>
+            </div>
             <a href="/patient/lhr?type=report" class="btn btn-secondary btn-sm">View All in LHR →</a>
         </div>
         <div class="table-responsive">
@@ -561,7 +599,7 @@ def render_lhr_timeline(patient: Dict[str, Any], timeline_items: List[Dict[str, 
             <ul style="font-size:0.85rem; margin:8px 0 8px 20px; line-height:1.6;">
                 {med_list}
             </ul>
-            <a href="/patient/prescription/{item['id']}" class="btn btn-secondary btn-sm">View Official Signed Prescription Sheet 🖨️</a>
+            <a href="/patient/prescription/{item['id']}" class="btn btn-secondary btn-sm">View Signed Prescription Sheet →</a>
             """
 
         items_html += f"""
@@ -623,7 +661,7 @@ def render_prescription_sheet(rx: Dict[str, Any], patient: Dict[str, Any], docto
     return f"""
     <div class="no-print" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
         <a href="javascript:history.back()" class="btn btn-secondary">← Back</a>
-        <button onclick="window.print()" class="btn btn-primary">🖨️ Print / Save as PDF</button>
+        <button onclick="window.print()" class="btn btn-primary">Print Official PDF</button>
     </div>
 
     <div class="prescription-sheet">
@@ -733,7 +771,7 @@ def render_report_detail(rpt: Dict[str, Any], patient: Dict[str, Any], doctor: D
     return f"""
     <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
         <a href="javascript:history.back()" class="btn btn-secondary">← Back</a>
-        <button onclick="window.print()" class="btn btn-primary">🖨️ Print Official Lab Report</button>
+        <button onclick="window.print()" class="btn btn-primary">Print Official Lab Report</button>
     </div>
 
     <div class="card" style="border-top:4px solid #7c3aed;">
@@ -914,8 +952,8 @@ def render_doctor_dashboard(doctor: Dict[str, Any], hospital: Dict[str, Any], re
     for e in recent_encounters:
         enc_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{e['encounter_id']}</td>
-            <td><strong>{e['patient_name']}</strong> ({e['upk']})</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{e['encounter_id']}</td>
+            <td><strong>{e['patient_name']}</strong> <span style="font-size:0.8rem; color:#64748b; font-family:monospace;">({e['upk']})</span></td>
             <td>{e['start_time'][:10]}</td>
             <td><strong>{e['diagnosis_name']}</strong></td>
             <td>
@@ -924,7 +962,7 @@ def render_doctor_dashboard(doctor: Dict[str, Any], hospital: Dict[str, Any], re
         </tr>
         """
     if not enc_rows:
-        enc_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No recent encounters logged.</td></tr>'
+        enc_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:24px;">No recent encounters logged.</td></tr>'
 
     rpt_rows = ""
     for r in available_reports:
@@ -932,52 +970,84 @@ def render_doctor_dashboard(doctor: Dict[str, Any], hospital: Dict[str, Any], re
         flag_badge = '<span class="badge badge-danger">CRITICAL</span>' if flag == 'Critical' else f'<span class="badge badge-warning">{flag}</span>' if flag in ('High', 'Low') else '<span class="badge badge-success">Normal</span>'
         rpt_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{r['report_id']}</td>
-            <td><strong>{r['patient_name']}</strong> ({r['upk']})</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{r['report_id']}</td>
+            <td><strong>{r['patient_name']}</strong> <span style="font-size:0.8rem; color:#64748b; font-family:monospace;">({r['upk']})</span></td>
             <td><strong>{r['test_name']}</strong></td>
             <td>{flag_badge}</td>
             <td>
-                <a href="/doctor/review-report/{r['report_id']}" class="btn btn-primary btn-sm">Review & Prescribe 🩺</a>
+                <a href="/doctor/review-report/{r['report_id']}" class="btn btn-primary btn-sm">Review & Prescribe</a>
             </td>
         </tr>
         """
     if not rpt_rows:
-        rpt_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No new diagnostic reports requiring review.</td></tr>'
+        rpt_rows = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:24px;">No diagnostic reports requiring review.</td></tr>'
+
+    initials = "".join([part[0] for part in doctor['name'].replace("Dr.", "").split() if part])[:2].upper() or "DR"
 
     return f"""
-    <!-- Doctor Profile Card -->
-    <div class="card" style="border-left:5px solid #2563eb;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-            <div>
-                <span class="badge badge-primary" style="margin-bottom:8px;">NMC Verified Practitioner</span>
-                <h2 style="font-size:1.6rem; color:var(--primary); margin-bottom:4px;">{doctor['name']}</h2>
-                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.88rem; color:#475569; margin-top:6px;">
-                    <div><strong>NMC Reg No:</strong> <span style="font-family:monospace; font-weight:700;">{doctor['nmc_id']}</span></div>
-                    <div><strong>UDK:</strong> <span style="font-family:monospace; color:#64748b;">{doctor['udk']}</span></div>
-                    <div><strong>Specialty:</strong> {doctor['specialty']}</div>
-                    <div><strong>Hospital:</strong> {hospital['name']}</div>
+    <!-- Doctor Identity Card -->
+    <div class="card" style="border-left:4px solid var(--primary); padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+            <div style="display:flex; align-items:center; gap:18px;">
+                <div style="width:58px; height:58px; border-radius:50%; background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.35rem; font-weight:800; border:2px solid #bae6fd;">
+                    {initials}
+                </div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span class="badge badge-primary">NMC Verified Practitioner</span>
+                        <span class="badge badge-info">{doctor['specialty']}</span>
+                    </div>
+                    <h2 style="font-size:1.5rem; color:var(--primary); font-weight:800; margin:0;">{doctor['name']}</h2>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.84rem; color:#475569; margin-top:6px;">
+                        <div><strong>NMC Reg No:</strong> <span style="font-family:monospace; font-weight:700;">{doctor['nmc_id']}</span></div>
+                        <div><strong>UDK:</strong> <span style="font-family:monospace; color:#64748b;">{doctor['udk']}</span></div>
+                        <div><strong>Facility:</strong> {hospital['name']}</div>
+                    </div>
                 </div>
             </div>
             <div style="display:flex; gap:10px;">
-                <a href="/doctor/search" class="btn btn-primary">🔍 Search Patient (UPK/ABHA)</a>
+                <a href="/doctor/search" class="btn btn-primary">Search Patient Record</a>
             </div>
         </div>
     </div>
 
-    <!-- Quick Search Widget -->
-    <div class="card" style="background:#f8fafc;">
-        <div class="card-title" style="margin-bottom:12px;">🔎 Immediate Patient Identity Search</div>
+    <!-- Clinician Metrics Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="card" style="padding:16px; border-left:4px solid var(--primary);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Recent Encounters</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--primary); margin-top:4px;">{len(recent_encounters)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Logged Consultations</div>
+        </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--accent-saffron);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Reports for Review</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--accent-saffron); margin-top:4px;">{len(available_reports)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Awaiting Physician Assessment</div>
+        </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--secondary);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Practice Base</div>
+            <div style="font-size:1.15rem; font-weight:800; color:var(--secondary); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{hospital['name']}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">HFR ID: {hospital['hfr_id']}</div>
+        </div>
+    </div>
+
+    <!-- Patient Identity Quick Search Widget -->
+    <div class="card" style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; margin-bottom:24px;">
+        <div style="font-weight:700; color:var(--primary); font-size:1rem; margin-bottom:6px;">Patient Identity Search</div>
+        <div style="font-size:0.84rem; color:#64748b; margin-bottom:12px;">Query by Universal Patient Key (UPK) or 14-digit National ABHA ID to access longitudinal charts.</div>
         <form action="/doctor/search" method="GET" style="display:flex; gap:10px;">
             <input type="text" name="query" class="form-control" placeholder="Enter Patient UPK (e.g. UPK-IND-2026-9041) or 14-digit ABHA Number..." required>
-            <button type="submit" class="btn btn-primary" style="min-width:140px;">Find Patient</button>
+            <button type="submit" class="btn btn-primary" style="min-width:140px;">Search Patient</button>
         </form>
     </div>
 
     <!-- Reports Requiring Doctor Review -->
-    <div class="card">
+    <div class="card" style="margin-bottom:24px;">
         <div class="card-header">
-            <div class="card-title">🔬 Diagnostic Reports Ready for Clinical Review</div>
-            <span class="badge badge-danger">Action Required</span>
+            <div>
+                <div class="card-title">Diagnostic Reports Ready for Clinical Review</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">NABL lab observations and diagnostic tests awaiting doctor sign-off:</div>
+            </div>
+            <span class="badge badge-warning">Action Required</span>
         </div>
         <div class="table-responsive">
             <table class="data-table">
@@ -1000,7 +1070,10 @@ def render_doctor_dashboard(doctor: Dict[str, Any], hospital: Dict[str, Any], re
     <!-- Recent Clinical Consultations -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📋 Recent Clinical Consultations</div>
+            <div>
+                <div class="card-title">Recent Clinical Consultations</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Outpatient encounters logged across departmental specialties:</div>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="data-table">
@@ -1030,35 +1103,52 @@ def render_doctor_patient_chart(patient: Dict[str, Any], consent_status: str, en
     if is_break_glass:
         banner_html = """
         <div class="alert-banner alert-danger" style="margin-bottom:20px;">
-            🚨 <strong>EMERGENCY BREAK-GLASS MODE ACTIVE:</strong> Accessing patient health records under DISHA Section 7 emergency provisions. This action is permanently logged to the national cryptographic audit ledger.
+            <div>
+                <strong>EMERGENCY BREAK-GLASS MODE ACTIVE:</strong> Accessing patient health records under DISHA Section 7 emergency provisions. This action is permanently logged to the national cryptographic audit ledger.
+            </div>
         </div>
         """
     elif consent_status != "GRANTED":
         banner_html = f"""
         <div class="alert-banner alert-warning" style="margin-bottom:20px;">
-            ⚠️ <strong>Active Patient Consent Missing:</strong> The patient has not yet explicitly authorized access to historical multi-hospital records. You can still initiate a new clinical encounter, or request emergency break-glass.
-            <div style="margin-top:8px;">
-                <a href="/doctor/break-glass-modal?upk={upk}" class="btn btn-danger btn-sm">Activate Emergency Break-Glass</a>
+            <div>
+                <strong>Active Patient Consent Missing:</strong> The patient has not yet explicitly authorized access to historical multi-hospital records. You can still initiate a new clinical encounter, or request emergency break-glass.
+                <div style="margin-top:8px;">
+                    <a href="/doctor/break-glass-modal?upk={upk}" class="btn btn-danger btn-sm">Activate Emergency Break-Glass</a>
+                </div>
             </div>
         </div>
         """
 
+    initials = "".join([part[0] for part in patient['name'].split() if part])[:2].upper() or "PT"
+
     return f"""
     {banner_html}
 
-    <div class="card" style="border-left:5px solid #087e8b;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-            <div>
-                <span class="badge badge-success">Patient Identified</span>
-                <h2 style="color:var(--primary); font-size:1.5rem; margin:4px 0;">{patient['name']}</h2>
-                <div style="font-size:0.85rem; color:#475569;">
-                    <strong>UPK:</strong> <span style="font-family:monospace;">{upk}</span> | <strong>ABHA:</strong> {patient['abha_number']} | <strong>DOB:</strong> {patient['dob']} ({patient['gender']}) | <strong>Blood:</strong> {patient.get('blood_group', 'B+')}
+    <div class="card" style="border-left:4px solid var(--secondary); padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+            <div style="display:flex; align-items:center; gap:18px;">
+                <div style="width:58px; height:58px; border-radius:50%; background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.35rem; font-weight:800; border:2px solid #bae6fd;">
+                    {initials}
+                </div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span class="badge badge-success">Patient Identified</span>
+                        <span class="badge badge-info">ABHA Linked</span>
+                    </div>
+                    <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin:0;">{patient['name']}</h2>
+                    <div style="font-size:0.84rem; color:#475569; margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
+                        <div><strong>UPK:</strong> <span style="font-family:monospace; font-weight:700;">{upk}</span></div>
+                        <div><strong>ABHA:</strong> <span style="font-family:monospace;">{patient['abha_number']}</span></div>
+                        <div><strong>DOB:</strong> {patient['dob']} ({patient['gender']})</div>
+                        <div><strong>Blood Group:</strong> {patient.get('blood_group', 'B+')}</div>
+                    </div>
                 </div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <a href="/doctor/encounter/new?upk={upk}" class="btn btn-primary">+ Record Clinical Encounter</a>
-                <a href="/doctor/order/new?upk={upk}" class="btn btn-secondary">🔬 Order Diagnostic Test</a>
-                <a href="/doctor/prescribe/new?upk={upk}" class="btn btn-success">💊 Issue E-Prescription</a>
+                <a href="/doctor/order/new?upk={upk}" class="btn btn-secondary">Order Diagnostic Test</a>
+                <a href="/doctor/prescribe/new?upk={upk}" class="btn btn-success">Issue E-Prescription</a>
             </div>
         </div>
     </div>
@@ -1067,11 +1157,14 @@ def render_doctor_patient_chart(patient: Dict[str, Any], consent_status: str, en
     <div class="grid-2">
         <div class="card">
             <div class="card-header">
-                <div class="card-title">📋 Previous Consultations ({len(encounters)})</div>
+                <div>
+                    <div class="card-title">Previous Consultations ({len(encounters)})</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Documented clinical encounters across facilities:</div>
+                </div>
             </div>
-            <div style="max-height:300px; overflow-y:auto;">
+            <div style="max-height:340px; overflow-y:auto;">
                 {''.join([f'''
-                <div style="border-bottom:1px solid #e2e8f0; padding:10px 0;">
+                <div style="border-bottom:1px solid #e2e8f0; padding:12px 0;">
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b;">
                         <span>{e['start_time'][:10]} • {e['department']}</span>
                         <span style="font-weight:600;">{e['hospital_name']}</span>
@@ -1079,25 +1172,28 @@ def render_doctor_patient_chart(patient: Dict[str, Any], consent_status: str, en
                     <div style="font-weight:700; color:var(--primary); font-size:0.95rem; margin-top:2px;">{e['diagnosis_name']}</div>
                     <div style="font-size:0.82rem; color:#475569; margin-top:4px;">{e['chief_complaint']}</div>
                 </div>
-                ''' for e in encounters]) if encounters else '<div style="color:#94a3b8; text-align:center; padding:20px;">No previous encounters.</div>'}
+                ''' for e in encounters]) if encounters else '<div style="color:#94a3b8; text-align:center; padding:30px;">No previous encounters.</div>'}
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <div class="card-title">🧪 Diagnostic Reports ({len(reports)})</div>
+                <div>
+                    <div class="card-title">Diagnostic Reports ({len(reports)})</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Standardized laboratory investigation findings:</div>
+                </div>
             </div>
-            <div style="max-height:300px; overflow-y:auto;">
+            <div style="max-height:340px; overflow-y:auto;">
                 {''.join([f'''
-                <div style="border-bottom:1px solid #e2e8f0; padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
+                <div style="border-bottom:1px solid #e2e8f0; padding:12px 0; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-size:0.8rem; color:#64748b;">{r['report_time'][:10]} • LOINC: {r['loinc_code']}</div>
                         <div style="font-weight:700; color:var(--primary);">{r['test_name']}</div>
-                        <div style="font-size:0.8rem; color:#475569;">Flag: <strong>{r['abnormal_flag']}</strong></div>
+                        <div style="font-size:0.8rem; color:#475569; margin-top:2px;">Flag: <strong>{r['abnormal_flag']}</strong></div>
                     </div>
                     <a href="/doctor/review-report/{r['report_id']}" class="btn btn-secondary btn-sm">Review →</a>
                 </div>
-                ''' for r in reports]) if reports else '<div style="color:#94a3b8; text-align:center; padding:20px;">No diagnostic reports on record.</div>'}
+                ''' for r in reports]) if reports else '<div style="color:#94a3b8; text-align:center; padding:30px;">No diagnostic reports on record.</div>'}
             </div>
         </div>
     </div>
@@ -1186,7 +1282,10 @@ def render_order_test_form(patient: Dict[str, Any], doctor: Dict[str, Any], labs
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔬 Order Diagnostic Test (FHIR ServiceRequest)</div>
+            <div>
+                <div class="card-title">Order Diagnostic Investigation (FHIR ServiceRequest)</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">NRCeS LOINC Catalog routing to accredited diagnostic pathology:</div>
+            </div>
             <span class="badge badge-purple">NRCeS LOINC Catalog</span>
         </div>
 
@@ -1240,7 +1339,10 @@ def render_prescribe_form(patient: Dict[str, Any], doctor: Dict[str, Any]) -> st
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">💊 Formulate & Digitally Sign E-Prescription</div>
+            <div>
+                <div class="card-title">Formulate & Digitally Sign E-Prescription</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">National Medical Commission PKI Digital Signature Standard:</div>
+            </div>
             <span class="badge badge-success">PKCS#11 / Aadhaar eSign PKI</span>
         </div>
 
@@ -1285,22 +1387,21 @@ def render_prescribe_form(patient: Dict[str, Any], doctor: Dict[str, Any]) -> st
             </div>
 
             <!-- PKI Digital Signature Authorization Box -->
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:16px; margin:20px 0;">
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:18px; margin:20px 0;">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                    <span style="font-size:1.4rem;">🔐</span>
-                    <strong style="color:#15803d;">Apply Doctor's Digital Cryptographic Signature (PKCS#11)</strong>
+                    <div style="font-weight:700; color:#15803d; font-size:0.95rem;">Apply Clinician Digital Cryptographic Signature (PKCS#11)</div>
                 </div>
-                <p style="font-size:0.85rem; color:#166534; margin-bottom:10px;">
-                    Under DISHA Section 7 and the IT Act 2000, clicking "Sign & Issue E-Prescription" will generate an immutable SHA-256 canonical hash and attach your verified NMC credentials (<strong>{doctor['nmc_id']}</strong>) to the tamper-evident prescription artifact.
+                <p style="font-size:0.85rem; color:#166534; margin-bottom:12px; line-height:1.5;">
+                    Under DISHA Section 7 and the IT Act 2000, clicking "Sign & Issue E-Prescription" generates an immutable SHA-256 canonical hash and attaches your verified NMC credentials (<strong>{doctor['nmc_id']}</strong>) to the tamper-evident prescription artifact.
                 </p>
-                <label style="font-size:0.85rem; font-weight:700; color:#15803d;">
+                <label style="font-size:0.85rem; font-weight:700; color:#15803d; display:flex; align-items:center; gap:8px;">
                     <input type="checkbox" required checked> I confirm clinical accuracy and authorize digital signature attachment.
                 </label>
             </div>
 
             <div style="text-align:right;">
-                <button type="submit" class="btn btn-success" style="font-size:1rem; padding:10px 24px;">
-                    ✍️ Sign & Issue E-Prescription
+                <button type="submit" class="btn btn-success" style="font-size:0.95rem; padding:10px 24px; font-weight:700;">
+                    Sign & Issue Digitally Signed E-Prescription
                 </button>
             </div>
         </form>
@@ -1328,12 +1429,15 @@ def render_doctor_review_report(report: Dict[str, Any], patient: Dict[str, Any],
     return f"""
     <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
         <a href="/doctor" class="btn btn-secondary">← Back to Dashboard</a>
-        <a href="/doctor/prescribe/new?upk={patient['upk']}" class="btn btn-primary">💊 Formulate E-Prescription based on this report →</a>
+        <a href="/doctor/prescribe/new?upk={patient['upk']}" class="btn btn-primary">Formulate E-Prescription for Patient →</a>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔬 Clinical Diagnostic Review: {report['test_name']}</div>
+            <div>
+                <div class="card-title">Clinical Diagnostic Review: {report['test_name']}</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Standardized laboratory investigation findings:</div>
+            </div>
             <div>{flag_badge}</div>
         </div>
 
@@ -1341,7 +1445,7 @@ def render_doctor_review_report(report: Dict[str, Any], patient: Dict[str, Any],
             <strong>Patient:</strong> {patient['name']} | <strong>UPK:</strong> {patient['upk']} | <strong>ABHA:</strong> {patient['abha_number']} | <strong>LOINC:</strong> {report['loinc_code']}
         </div>
 
-        <h3 style="font-size:1.1rem; color:var(--primary); margin-bottom:10px;">Current Observation Values:</h3>
+        <h3 style="font-size:1.05rem; color:var(--primary); margin-bottom:10px;">Current Observation Values:</h3>
         <table class="data-table" style="margin-bottom:20px;">
             <thead>
                 <tr>
@@ -1352,7 +1456,7 @@ def render_doctor_review_report(report: Dict[str, Any], patient: Dict[str, Any],
                 </tr>
             </thead>
             <tbody>
-                {''.join([f"<tr><td><strong>{r.get('parameter', report['test_name'])}</strong></td><td style='font-size:1.1rem; font-weight:700;'>{r.get('value')} {r.get('unit')}</td><td>{r.get('ref', report['reference_range'])}</td><td>{flag_badge}</td></tr>" for r in results])}
+                {''.join([f"<tr><td><strong>{r.get('parameter', report['test_name'])}</strong></td><td style='font-size:1.05rem; font-weight:700;'>{r.get('value')} {r.get('unit')}</td><td>{r.get('ref', report['reference_range'])}</td><td>{flag_badge}</td></tr>" for r in results])}
             </tbody>
         </table>
 
@@ -1362,7 +1466,7 @@ def render_doctor_review_report(report: Dict[str, Any], patient: Dict[str, Any],
         </div>
 
         <!-- Historical Trend Graph / Table -->
-        <div class="card-title" style="font-size:1.05rem; margin-bottom:10px;">📈 Longitudinal History for this Test ({report['test_name']}):</div>
+        <div class="card-title" style="font-size:1.05rem; margin-bottom:10px;">Longitudinal History for this Test ({report['test_name']}):</div>
         <table class="data-table">
             <thead>
                 <tr>
@@ -1373,7 +1477,7 @@ def render_doctor_review_report(report: Dict[str, Any], patient: Dict[str, Any],
                 </tr>
             </thead>
             <tbody>
-                {hist_rows if hist_rows else '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No previous test instances found.</td></tr>'}
+                {hist_rows if hist_rows else '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No previous test instances found.</td></tr>'}
             </tbody>
         </table>
     </div>
@@ -1386,60 +1490,90 @@ def render_lab_worklist(lab: Dict[str, Any], pending_orders: List[Dict[str, Any]
         p_badge = '<span class="badge badge-danger">STAT</span>' if o['priority'] == 'STAT' else '<span class="badge badge-warning">Urgent</span>' if o['priority'] == 'Urgent' else '<span class="badge badge-info">Routine</span>'
         order_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{o['order_id']}</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{o['order_id']}</td>
             <td>{o['order_time'][:10]}</td>
-            <td><strong>{o['patient_name']}</strong> ({o['upk']})</td>
-            <td><strong>{o['test_name']}</strong> ({o['loinc_code']})</td>
+            <td><strong>{o['patient_name']}</strong> <span style="font-size:0.8rem; color:#64748b; font-family:monospace;">({o['upk']})</span></td>
+            <td><strong>{o['test_name']}</strong> <span style="font-size:0.8rem; color:#64748b;">({o['loinc_code']})</span></td>
             <td>{o['doctor_name']}</td>
             <td>{p_badge}</td>
             <td><span class="badge badge-secondary">{o['status']}</span></td>
             <td>
-                <a href="/lab/entry/{o['order_id']}" class="btn btn-primary btn-sm">Enter Results 🔬</a>
+                <a href="/lab/entry/{o['order_id']}" class="btn btn-primary btn-sm">Enter Results</a>
             </td>
         </tr>
         """
     if not order_rows:
-        order_rows = '<tr><td colspan="8" style="text-align:center; color:#94a3b8;">No pending diagnostic orders in worklist.</td></tr>'
+        order_rows = '<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:24px;">No pending diagnostic orders in worklist.</td></tr>'
 
     report_rows = ""
     for r in completed_reports:
         report_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{r['report_id']}</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{r['report_id']}</td>
             <td>{r['report_time'][:10]}</td>
-            <td>{r['patient_name']}</td>
+            <td><strong>{r['patient_name']}</strong></td>
             <td><strong>{r['test_name']}</strong></td>
             <td><span class="badge badge-success">{r['status']}</span></td>
             <td>
-                <a href="/patient/report/{r['report_id']}" class="btn btn-secondary btn-sm">View Report</a>
-                <a href="/lab/amend/{r['report_id']}" class="btn btn-secondary btn-sm" style="color:#b91c1c;">Amend ✏️</a>
+                <div style="display:flex; gap:6px;">
+                    <a href="/patient/report/{r['report_id']}" class="btn btn-secondary btn-sm">View Report</a>
+                    <a href="/lab/amend/{r['report_id']}" class="btn btn-outline btn-sm" style="color:#b91c1c; border-color:#fca5a5;">Amend</a>
+                </div>
             </td>
         </tr>
         """
     if not report_rows:
-        report_rows = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No completed reports today.</td></tr>'
+        report_rows = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:24px;">No completed reports today.</td></tr>'
 
     return f"""
-    <div class="card" style="border-left:5px solid #7c3aed;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <!-- Lab Profile Header -->
+    <div class="card" style="border-left:4px solid var(--secondary); padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
             <div>
-                <span class="badge badge-purple" style="margin-bottom:6px;">NABL Accredited Worklist</span>
-                <h2 style="color:var(--primary);">{lab['name']}</h2>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
-                    <strong>NABL Accreditation:</strong> {lab['nabl_id']} | <strong>Expiry:</strong> {lab['accreditation_expiry']} | <strong>Status:</strong> <span class="badge badge-success">Active & Certified</span>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="badge badge-purple">NABL Accredited Worklist</span>
+                    <span class="badge badge-success">ABDM Gateway Synchronized</span>
+                </div>
+                <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin:0;">{lab['name']}</h2>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
+                    <div><strong>NABL Accreditation:</strong> <span style="font-family:monospace; font-weight:700;">{lab['nabl_id']}</span></div>
+                    <div><strong>Expiry:</strong> {lab['accreditation_expiry']}</div>
+                    <div><strong>Status:</strong> <span style="color:#15803d; font-weight:700;">Active & Certified</span></div>
                 </div>
             </div>
             <div>
-                <span class="badge badge-info" style="font-size:0.85rem; padding:6px 12px;">Worklist Status: ONLINE</span>
+                <span class="badge badge-info" style="font-size:0.85rem; padding:6px 14px;">Worklist Status: ONLINE</span>
             </div>
         </div>
     </div>
 
+    <!-- Lab Metrics Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="card" style="padding:16px; border-left:4px solid var(--primary);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Pending Test Orders</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--primary); margin-top:4px;">{len(pending_orders)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Awaiting Specimen / Result Entry</div>
+        </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--accent-green);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Released Reports</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--accent-green); margin-top:4px;">{len(completed_reports)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Published to National LHR</div>
+        </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--accent-saffron);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Compliance Standard</div>
+            <div style="font-size:1.15rem; font-weight:800; color:var(--accent-saffron); margin-top:4px;">ISO 15189:2022</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">LOINC Coded Observations</div>
+        </div>
+    </div>
+
     <!-- Pending Orders Queue -->
-    <div class="card">
+    <div class="card" style="margin-bottom:24px;">
         <div class="card-header">
-            <div class="card-title">📥 Pending Test Orders Queue ({len(pending_orders)})</div>
-            <input type="text" id="worklistFilter" class="form-control" style="width:220px;" placeholder="Filter by patient/test..." onkeyup="filterTable('worklistFilter', 'ordersTable')">
+            <div>
+                <div class="card-title">Pending Test Orders Queue ({len(pending_orders)})</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Diagnostic test service requests ordered by verified clinicians:</div>
+            </div>
+            <input type="text" id="worklistFilter" class="form-control" style="width:240px;" placeholder="Filter by patient/test..." onkeyup="filterTable('worklistFilter', 'ordersTable')">
         </div>
         <div class="table-responsive">
             <table class="data-table" id="ordersTable">
@@ -1465,7 +1599,10 @@ def render_lab_worklist(lab: Dict[str, Any], pending_orders: List[Dict[str, Any]
     <!-- Recently Released Reports -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">✓ Released Diagnostic Reports (LHR Synchronized)</div>
+            <div>
+                <div class="card-title">Released Diagnostic Reports (LHR Synchronized)</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Published laboratory investigations available to clinician and citizen:</div>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="data-table">
@@ -1500,13 +1637,16 @@ def render_result_entry_form(order: Dict[str, Any], patient: Dict[str, Any], doc
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔬 Structured Laboratory Result Entry</div>
+            <div>
+                <div class="card-title">Structured Laboratory Result Entry</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">LOINC observation capture with real-time interpretation flagging:</div>
+            </div>
             <span class="badge badge-purple">{order['test_name']}</span>
         </div>
 
-        <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:0.85rem; display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-            <div><strong>Patient:</strong> {patient['name']} ({patient['upk']})</div>
-            <div><strong>Doctor:</strong> {doctor['name']} ({doctor['udk']})</div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:14px; border-radius:6px; margin-bottom:20px; font-size:0.85rem; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div><strong>Patient:</strong> {patient['name']} <span style="font-family:monospace; color:#64748b;">({patient['upk']})</span></div>
+            <div><strong>Doctor:</strong> {doctor['name']} <span style="font-family:monospace; color:#64748b;">({doctor['udk']})</span></div>
             <div><strong>Clinical Indication:</strong> {order.get('clinical_indication', 'Routine check')}</div>
         </div>
 
@@ -1548,12 +1688,12 @@ def render_result_entry_form(order: Dict[str, Any], patient: Dict[str, Any], doc
                 <textarea name="interpretation" class="form-control" rows="3" placeholder="Enter diagnostic observations, methodology, or recommendations..."></textarea>
             </div>
 
-            <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:12px; margin-bottom:20px; font-size:0.85rem; color:#3730a3;">
-                ℹ️ Submitting this form will generate a <strong>FHIR DiagnosticReport</strong> with child <strong>Observation</strong> resources, attach a Base64 PDF document reference, and notify both the patient and ordering clinician.
+            <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:14px; margin-bottom:20px; font-size:0.85rem; color:#3730a3; line-height:1.5;">
+                Submitting this form generates a <strong>FHIR DiagnosticReport</strong> with child <strong>Observation</strong> resources, attaches a Base64 PDF document reference, and notifies both the patient and ordering clinician.
             </div>
 
             <div style="text-align:right;">
-                <button type="submit" class="btn btn-primary" style="padding:10px 24px;">Release & Authorize Diagnostic Report ✓</button>
+                <button type="submit" class="btn btn-primary" style="padding:10px 24px; font-weight:700;">Release & Authorize Diagnostic Report</button>
             </div>
         </form>
     </div>
@@ -1566,7 +1706,7 @@ def render_hospital_portal(hospital: Dict[str, Any], doctors: List[Dict[str, Any
     for d in doctors:
         doc_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-weight:700;">{d['udk']}</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--primary);">{d['udk']}</td>
             <td><strong>{d['name']}</strong></td>
             <td>{d['specialty']}</td>
             <td><span style="font-family:monospace;">{d['nmc_id']}</span></td>
@@ -1575,50 +1715,53 @@ def render_hospital_portal(hospital: Dict[str, Any], doctors: List[Dict[str, Any
         """
 
     return f"""
-    <div class="card" style="border-left:5px solid #f48c06;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <!-- Hospital Facility Profile Header -->
+    <div class="card" style="border-left:4px solid var(--accent-saffron); padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
             <div>
-                <span class="badge badge-warning" style="margin-bottom:6px;">HFR Registered Healthcare Facility</span>
-                <h2 style="color:var(--primary);">{hospital['name']}</h2>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
-                    <strong>HFR Registry ID:</strong> {hospital['hfr_id']} | <strong>Tier:</strong> {hospital['tier']} | <strong>Location:</strong> {hospital['district']}, {hospital['state']}
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="badge badge-warning">HFR Registered Healthcare Facility</span>
+                    <span class="badge badge-info">{hospital['tier']} Facility</span>
+                </div>
+                <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin:0;">{hospital['name']}</h2>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
+                    <div><strong>HFR Registry ID:</strong> <span style="font-family:monospace; font-weight:700;">{hospital['hfr_id']}</span></div>
+                    <div><strong>Location:</strong> {hospital['district']}, {hospital['state']}</div>
+                    <div><strong>National Gateway:</strong> <span style="color:#15803d; font-weight:700;">Connected</span></div>
                 </div>
             </div>
             <div>
-                <span class="badge badge-success" style="font-size:0.85rem; padding:6px 12px;">ABDM Gateway Connected</span>
+                <span class="badge badge-success" style="font-size:0.85rem; padding:6px 14px;">ABDM Gateway Connected</span>
             </div>
         </div>
     </div>
 
     <!-- Hospital Key Metrics -->
-    <div class="grid-3" style="margin-bottom:20px;">
-        <div class="stat-box">
-            <div class="stat-icon" style="background:#e0f2fe; color:#0369a1;">🩺</div>
-            <div>
-                <div class="stat-val">{len(doctors)}</div>
-                <div class="stat-label">Active NMC Clinicians</div>
-            </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="card" style="padding:16px; border-left:4px solid var(--primary);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Active NMC Clinicians</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--primary); margin-top:4px;">{len(doctors)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Licensed Medical Practitioners</div>
         </div>
-        <div class="stat-box">
-            <div class="stat-icon" style="background:#fef3c7; color:#b45309;">🏛️</div>
-            <div>
-                <div class="stat-val">{len(departments)}</div>
-                <div class="stat-label">Registered Clinical Departments</div>
-            </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--secondary);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Clinical Departments</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--secondary); margin-top:4px;">{len(departments)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Specialty OPD/IPD Units</div>
         </div>
-        <div class="stat-box">
-            <div class="stat-icon" style="background:#dcfce7; color:#15803d;">📋</div>
-            <div>
-                <div class="stat-val">{stats.get('encounters_count', 0)}</div>
-                <div class="stat-label">Total Outpatient Encounters</div>
-            </div>
+        <div class="card" style="padding:16px; border-left:4px solid var(--accent-green);">
+            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Outpatient Encounters</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--accent-green); margin-top:4px;">{stats.get('encounters_count', 0)}</div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:2px;">Synchronized to National LHR</div>
         </div>
     </div>
 
     <!-- Active Doctor Roster -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">👨‍⚕️ Verified Doctor Roster (NMC / HPR Linked)</div>
+            <div>
+                <div class="card-title">Verified Clinician Roster (NMC / HPR Linked)</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Credentialed healthcare professionals registered under National Medical Commission:</div>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="data-table">
@@ -1632,7 +1775,7 @@ def render_hospital_portal(hospital: Dict[str, Any], doctors: List[Dict[str, Any
                     </tr>
                 </thead>
                 <tbody>
-                    {doc_rows if doc_rows else '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No clinicians registered.</td></tr>'}
+                    {doc_rows if doc_rows else '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:24px;">No clinicians registered.</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -1647,24 +1790,33 @@ def render_research_portal(analytics_data: Dict[str, Any], query_params: Dict[st
     k_status = analytics_data.get("k_anonymity_status", "COMPLIANT (k >= 50)")
 
     return f"""
-    <div class="card" style="border-left:5px solid #0284c7;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <!-- Research Gateway Profile Header -->
+    <div class="card" style="border-left:4px solid var(--secondary); padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
             <div>
-                <span class="badge badge-info" style="margin-bottom:6px;">ICMR Epidemiological Research Gateway</span>
-                <h2 style="color:var(--primary);">De-Identified Public Health Analytics Lake</h2>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
-                    Compliant with <strong>DISHA 2018 Section 5</strong> & <strong>DPDPA 2023</strong> • Privacy Engine: <strong>k-Anonymity &ge; 50 + Differential Privacy</strong>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="badge badge-info">ICMR Epidemiological Research Gateway</span>
+                    <span class="badge badge-success">DISHA 2018 & DPDPA 2023 Compliant</span>
+                </div>
+                <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin:0;">De-Identified Public Health Analytics Lake</h2>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:6px;">
+                    Privacy Engine: <strong>k-Anonymity &ge; 50 + Differential Privacy</strong> • Zero personally identifiable health information exposed.
                 </div>
             </div>
             <div>
-                <span class="badge badge-success" style="font-size:0.85rem; padding:6px 12px;">🛡️ {k_status}</span>
+                <span class="badge badge-success" style="font-size:0.85rem; padding:6px 14px;">{k_status}</span>
             </div>
         </div>
     </div>
 
     <!-- Query Builder -->
-    <div class="card">
-        <div class="card-title" style="margin-bottom:12px;">🔍 Cohort Query Filter</div>
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Cohort Query Filter</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Filter population health aggregates by specialty and geographic territory:</div>
+            </div>
+        </div>
         <form action="/research" method="GET" class="grid-4" style="align-items:flex-end;">
             <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Clinical Department:</label>
@@ -1691,22 +1843,27 @@ def render_research_portal(analytics_data: Dict[str, Any], query_params: Dict[st
                 <input type="text" class="form-control" value="k-anonymity (k=50) + Laplace Noise" readonly style="background:#f1f5f9;">
             </div>
             <div>
-                <button type="submit" class="btn btn-primary" style="width:100%;">Run Aggregation Query</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; font-weight:700;">Run Aggregation Query</button>
             </div>
         </form>
     </div>
 
     <!-- Export Dataset Actions -->
-    <div style="margin-bottom:20px; display:flex; justify-content:flex-end; gap:10px;">
-        <a href="/api/v1/research/export?format=csv" class="btn btn-secondary">📥 Export De-identified CSV</a>
-        <a href="/api/v1/research/export?format=json" class="btn btn-secondary">📥 Export De-identified JSON</a>
-        <a href="/api/v1/research/export?format=fhir" class="btn btn-primary">📦 Export FHIR R4 Bundle</a>
+    <div style="margin-bottom:24px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+        <a href="/api/v1/research/export?format=csv" class="btn btn-secondary">Export CSV</a>
+        <a href="/api/v1/research/export?format=json" class="btn btn-secondary">Export JSON</a>
+        <a href="/api/v1/research/export?format=fhir" class="btn btn-primary">Export FHIR R4 Bundle</a>
     </div>
 
     <!-- Charts / Aggregated Stats Grid -->
     <div class="grid-2">
         <div class="card">
-            <div class="card-title" style="margin-bottom:12px;">📊 Disease Prevalence by SNOMED CT Concept</div>
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Disease Prevalence by SNOMED CT Concept</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">De-identified clinical condition distribution:</div>
+                </div>
+            </div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -1716,13 +1873,18 @@ def render_research_portal(analytics_data: Dict[str, Any], query_params: Dict[st
                     </tr>
                 </thead>
                 <tbody>
-                    {''.join([f"<tr><td><strong>{k}</strong></td><td>{v['count']}</td><td><div style='background:#e2e8f0; border-radius:4px; width:100px; height:8px;'><div style='background:#0284c7; width:{min(100, v['count']*15)}%; height:100%; border-radius:4px;'></div></div></td></tr>" for k, v in disease_stats.items()]) if disease_stats else '<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No data in cohort.</td></tr>'}
+                    {''.join([f"<tr><td><strong>{k}</strong></td><td>{v['count']}</td><td><div style='background:#e2e8f0; border-radius:4px; width:100px; height:8px;'><div style='background:var(--secondary); width:{min(100, v['count']*15)}%; height:100%; border-radius:4px;'></div></div></td></tr>" for k, v in disease_stats.items()]) if disease_stats else '<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">No data in cohort.</td></tr>'}
                 </tbody>
             </table>
         </div>
 
         <div class="card">
-            <div class="card-title" style="margin-bottom:12px;">📈 Age Bracket Cohort Distribution</div>
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Age Bracket Cohort Distribution</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">10-year demographic age bands:</div>
+                </div>
+            </div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -1732,7 +1894,7 @@ def render_research_portal(analytics_data: Dict[str, Any], query_params: Dict[st
                     </tr>
                 </thead>
                 <tbody>
-                    {''.join([f"<tr><td><strong>{k}</strong></td><td>{v}</td><td><div style='background:#e2e8f0; border-radius:4px; width:100px; height:8px;'><div style='background:#10b981; width:{min(100, v*25)}%; height:100%; border-radius:4px;'></div></div></td></tr>" for k, v in age_stats.items()]) if age_stats else '<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No data in cohort.</td></tr>'}
+                    {''.join([f"<tr><td><strong>{k}</strong></td><td>{v}</td><td><div style='background:#e2e8f0; border-radius:4px; width:100px; height:8px;'><div style='background:var(--accent-green); width:{min(100, v*25)}%; height:100%; border-radius:4px;'></div></div></td></tr>" for k, v in age_stats.items()]) if age_stats else '<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">No data in cohort.</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -1742,32 +1904,36 @@ def render_research_portal(analytics_data: Dict[str, Any], query_params: Dict[st
 def render_security_portal(audit_events: List[Dict[str, Any]], integrity_status: Dict[str, Any]) -> str:
     """Render Zero-Trust security monitor and cryptographic immutable audit ledger with hash verification."""
     is_intact = integrity_status.get("is_intact", True)
-    status_badge = '<span class="badge badge-success" style="font-size:0.85rem; padding:6px 12px;">LEDGER CHAIN INTACT & VALID</span>' if is_intact else '<span class="badge badge-danger">TAMPER DETECTED</span>'
+    status_badge = '<span class="badge badge-success" style="font-size:0.85rem; padding:6px 14px;">LEDGER CHAIN INTACT & VALID</span>' if is_intact else '<span class="badge badge-danger">TAMPER DETECTED</span>'
 
     audit_rows = ""
     for a in audit_events[:15]:
         outcome_badge = '<span class="badge badge-success">SUCCESS</span>' if a['outcome'] == 'SUCCESS' else '<span class="badge badge-danger">DENIED</span>'
         audit_rows += f"""
         <tr>
-            <td style="font-family:monospace; font-size:0.75rem;">{a['audit_id']}</td>
+            <td style="font-family:monospace; font-size:0.75rem; color:var(--primary); font-weight:700;">{a['audit_id']}</td>
             <td style="font-size:0.8rem; color:#64748b;">{a['timestamp']}</td>
             <td><strong>{a['user_id']}</strong><br><small style="color:#64748b;">Role: {a['role']}</small></td>
             <td><span class="badge badge-primary">{a['action']}</span></td>
             <td>{a['resource_type']}<br><small style="font-family:monospace; color:#64748b;">{a['resource_id']}</small></td>
             <td>{outcome_badge}</td>
-            <td style="font-family:monospace; font-size:0.72rem; color:#475569;" title="{a['curr_hash']}">
-                {a['curr_hash'][:14]}...
+            <td style="font-family:monospace; font-size:0.75rem; color:#475569;" title="{a['curr_hash']}">
+                <code>{a['curr_hash'][:14]}...</code>
             </td>
         </tr>
         """
 
     return f"""
-    <div class="card" style="border-left:5px solid #dc2626;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <!-- Security Center Profile Header -->
+    <div class="card" style="border-left:4px solid #dc2626; padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
             <div>
-                <span class="badge badge-danger" style="margin-bottom:6px;">NIST SP 800-207 Zero-Trust Architecture</span>
-                <h2 style="color:var(--primary);">Cryptographic Audit Ledger & Security Monitor</h2>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="badge badge-danger">NIST SP 800-207 Zero-Trust Architecture</span>
+                    <span class="badge badge-info">DISHA Mandated 10-Yr Retention</span>
+                </div>
+                <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin:0;">Cryptographic Audit Ledger & Security Monitor</h2>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:6px;">
                     Immutable SHA-256 Block Chained Audit Trail • All record accesses, prescriptions, and consent actions logged.
                 </div>
             </div>
@@ -1778,16 +1944,16 @@ def render_security_portal(audit_events: List[Dict[str, Any]], integrity_status:
     </div>
 
     <!-- Security Integrity Verification Card -->
-    <div class="card" style="background:#f8fafc;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div class="card" style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
-                <div style="font-weight:700; color:var(--primary);">Blockchain-Style Cryptographic Chain Verification</div>
-                <div style="font-size:0.85rem; color:#64748b; margin-top:2px;">
+                <div style="font-weight:700; color:var(--primary); font-size:1rem;">Cryptographic Hash Chain Verification</div>
+                <div style="font-size:0.84rem; color:#64748b; margin-top:4px;">
                     Total Verified Ledger Blocks: <strong>{integrity_status.get('total_records', 0)}</strong> | Genesis Root: <span style="font-family:monospace;">GENESIS_BLOCK_CIHIP_NHA_2026_MOHFW</span>
                 </div>
             </div>
             <form action="/admin/security/verify" method="POST">
-                <button type="submit" class="btn btn-primary btn-sm">⚡ Re-verify Hash Chain Integrity</button>
+                <button type="submit" class="btn btn-primary btn-sm" style="font-weight:700;">Verify Hash Chain Integrity</button>
             </form>
         </div>
     </div>
@@ -1795,8 +1961,11 @@ def render_security_portal(audit_events: List[Dict[str, Any]], integrity_status:
     <!-- Live Audit Ledger Table -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📜 Immutable Access & Exchange Ledger</div>
-            <span class="badge badge-info">10-Year DISHA Mandated Retention</span>
+            <div>
+                <div class="card-title">Immutable Access & Exchange Ledger</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">10-Year DISHA Mandated Retention for all health data interactions:</div>
+            </div>
+            <span class="badge badge-info">Zero-Trust Active</span>
         </div>
         <div class="table-responsive">
             <table class="data-table">
@@ -2634,10 +2803,10 @@ def render_database_explorer(
 
                 <div style="display:flex; gap:8px; align-items:center;">
                     <a href="/admin/database/export?table={active_table}&format=json" class="btn btn-secondary btn-sm" download>
-                        📥 Export JSON
+                        Export JSON
                     </a>
                     <a href="/admin/database/export?table={active_table}&format=csv" class="btn btn-secondary btn-sm" download>
-                        📊 Export CSV
+                        Export CSV
                     </a>
                 </div>
             </div>
@@ -2669,7 +2838,6 @@ def render_database_explorer(
         <!-- Interactive SQL Query Console -->
         <div class="card" style="padding:22px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <span style="font-size:1.3rem;">⚡</span>
                 <h3 style="color:var(--primary); font-size:1.25rem; font-weight:800; margin:0;">
                     Interactive SQL Console & Data Query Runner
                 </h3>
@@ -2681,22 +2849,22 @@ def render_database_explorer(
             <!-- Quick Template Chips -->
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT * FROM patients WHERE state = \\'Delhi\\';')">
-                    🏥 Delhi Patients
+                    Delhi Patients
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT udk, name, specialty, qualification, phone FROM doctors;')">
-                    👨‍⚕️ Doctors Catalog
+                    Doctors Catalog
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT encounter_id, upk, udk, hospital_id, diagnosis_name, diagnosis_snomed, start_time FROM encounters;')">
-                    🩺 Clinical Encounters
+                    Clinical Encounters
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT report_id, upk, test_name, loinc_code, abnormal_flag, reference_range FROM diagnostic_reports;')">
-                    🧪 Lab Reports (LOINC)
+                    Lab Reports (LOINC)
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT rx_id, upk, udk, canonical_hash, status, issue_time FROM prescriptions;')">
-                    💊 Signed Prescriptions
+                    Signed Prescriptions
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT audit_id, timestamp, user_id, action, resource_type, outcome, curr_hash FROM audit_events ORDER BY timestamp DESC LIMIT 20;')">
-                    🔒 Audit Trail Ledger
+                    Audit Trail Ledger
                 </button>
             </div>
 
@@ -2714,10 +2882,10 @@ def render_database_explorer(
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="font-size:0.78rem; color:#64748b;">
-                        🔒 State mutations (DROP/DELETE/UPDATE) are protected. Read-only execution enforced.
+                        State mutations (DROP/DELETE/UPDATE) are protected. Read-only execution enforced.
                     </div>
                     <button type="submit" class="btn btn-primary" style="padding:8px 20px; font-weight:700;">
-                        ⚡ Run SQL Query
+                        Run SQL Query
                     </button>
                 </div>
             </form>
