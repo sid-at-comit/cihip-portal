@@ -9,6 +9,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = os.environ.get("CIHIP_DB_PATH", str(BASE_DIR / "cihip.db"))
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 PORT = int(os.environ.get("PORT", os.environ.get("CIHIP_PORT", "8080")))
 HOST = os.environ.get("CIHIP_HOST", "0.0.0.0")
 

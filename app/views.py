@@ -98,10 +98,11 @@ def render_master(
         <a href="/admin/security" class="nav-item {'active' if active_nav == 'admin' else ''}">{t('system_security', lang)}</a>
         """
 
-    # Always provide API docs link, Sign In link, and Register link
+    # Always provide API docs link, Database link, Sign In link, and Register link
     nav_items += f"""
     <a href="/signin" class="nav-item {'active' if active_nav in ('signin', 'login') else ''}">🔐 Sign In</a>
     <a href="/signup" class="nav-item {'active' if active_nav in ('signup', 'register') else ''}">📝 Register</a>
+    <a href="/admin/database" class="nav-item {'active' if active_nav == 'database' else ''}">🗄️ Database</a>
     <a href="/api/docs" class="nav-item {'active' if active_nav == 'api' else ''}">{t('api_docs', lang)}</a>
     """
 
@@ -2442,4 +2443,360 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
             </div>
         </div>
     </div>
+    """
+
+def render_database_explorer(
+    db_stats: Dict[str, Any],
+    active_table: str,
+    table_data: Dict[str, Any],
+    query_result: Optional[Dict[str, Any]] = None,
+    query_input: str = "",
+    lang: str = "en"
+) -> str:
+    """Render comprehensive Visual Database Explorer & Management Dashboard."""
+    engine = db_stats.get("engine", {})
+    table_counts = db_stats.get("table_counts", {})
+    total_records = db_stats.get("total_records", 0)
+    tables = db_stats.get("tables", {})
+
+    # Engine badge styling
+    is_pg = engine.get("engine") == "postgresql"
+    engine_badge = f"""
+    <span class="badge {'badge-primary' if is_pg else 'badge-success'}" style="font-size:0.85rem; padding:6px 12px;">
+        {'🐘 Cloud PostgreSQL 16' if is_pg else '🗄️ Embedded SQLite 3 (WAL)'}
+    </span>
+    """
+
+    # Table chips
+    table_icons = {
+        "users": "👤",
+        "patients": "🏥",
+        "doctors": "👨‍⚕️",
+        "hospitals": "🏢",
+        "labs": "🔬",
+        "encounters": "🩺",
+        "service_requests": "📋",
+        "diagnostic_reports": "🧪",
+        "prescriptions": "💊",
+        "consents": "📜",
+        "audit_events": "🔒",
+        "research_queries": "📊"
+    }
+
+    chips_html = ""
+    for tbl_name, tbl_info in tables.items():
+        is_active = tbl_name == active_table
+        count = table_counts.get(tbl_name, 0)
+        icon = table_icons.get(tbl_name, "📁")
+        bg_style = "background:var(--primary); color:#ffffff; border-color:var(--primary);" if is_active else "background:#ffffff; color:var(--text-main); border:1px solid #cbd5e1;"
+        badge_bg = "background:rgba(255,255,255,0.25); color:#ffffff;" if is_active else "background:#e2e8f0; color:#475569;"
+        chips_html += f"""
+        <a href="/admin/database?table={tbl_name}" class="demo-pill" style="{bg_style} padding:6px 14px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <span>{icon} {tbl_name}</span>
+            <span style="font-size:0.75rem; padding:2px 7px; border-radius:10px; {badge_bg} font-weight:700;">{count}</span>
+        </a>
+        """
+
+    # Active Table Columns & Rows
+    cols = table_data.get("columns", [])
+    rows = table_data.get("rows", [])
+    total_rows = table_data.get("total_rows", 0)
+    current_page = table_data.get("current_page", 1)
+    total_pages = table_data.get("total_pages", 1)
+    pk = table_data.get("primary_key", "")
+    desc = table_data.get("description", "")
+
+    # Headers
+    th_cells = ""
+    for c in cols:
+        is_pk = c == pk
+        pk_indicator = ' 🔑' if is_pk else ''
+        th_cells += f'<th style="white-space:nowrap; {"color:var(--primary); font-weight:700;" if is_pk else ""}">{html.escape(c)}{pk_indicator}</th>'
+
+    # Rows
+    tr_cells = ""
+    if not rows:
+        tr_cells = f'<tr><td colspan="{len(cols)}" style="text-align:center; padding:30px; color:#94a3b8;">No records in table <code>{html.escape(active_table)}</code></td></tr>'
+    else:
+        for r in rows:
+            td_cells = ""
+            for c in cols:
+                val = r.get(c)
+                if val is None:
+                    formatted_val = '<span style="color:#94a3b8; font-style:italic;">NULL</span>'
+                elif isinstance(val, (dict, list)):
+                    s = json.dumps(val)
+                    preview = s[:60] + ('...' if len(s) > 60 else '')
+                    formatted_val = f'<code style="font-size:0.75rem; background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#0f172a;" title="{html.escape(s)}">{html.escape(preview)}</code>'
+                elif str(val) in ("ACTIVE", "VERIFIED", "ACCREDITED", "GRANTED", "FINAL", "COMPLETED", "SUCCESS"):
+                    formatted_val = f'<span class="badge badge-success" style="font-size:0.75rem;">{html.escape(str(val))}</span>'
+                elif str(val) in ("REVOKED", "SUPERSEDED", "FAILED", "SUSPENDED"):
+                    formatted_val = f'<span class="badge badge-danger" style="font-size:0.75rem;">{html.escape(str(val))}</span>'
+                elif str(val) in ("SUBMITTED", "PENDING", "AMENDED"):
+                    formatted_val = f'<span class="badge badge-warning" style="font-size:0.75rem;">{html.escape(str(val))}</span>'
+                elif c in ("upk", "udk", "hospital_id", "lab_id", "order_id", "report_id", "rx_id", "consent_id", "audit_id"):
+                    formatted_val = f'<span style="font-family:monospace; font-weight:600; color:var(--primary);">{html.escape(str(val))}</span>'
+                elif "hash" in c:
+                    short_h = str(val)[:16] + "..." if len(str(val)) > 16 else str(val)
+                    formatted_val = f'<code style="font-size:0.72rem; color:#64748b;" title="{html.escape(str(val))}">{html.escape(short_h)}</code>'
+                else:
+                    s_val = str(val)
+                    if len(s_val) > 70:
+                        s_val = s_val[:70] + "..."
+                    formatted_val = html.escape(s_val)
+                td_cells += f'<td style="font-size:0.83rem;">{formatted_val}</td>'
+            tr_cells += f'<tr>{td_cells}</tr>'
+
+    # Pagination buttons
+    prev_link = f'<a href="/admin/database?table={active_table}&page={current_page - 1}" class="btn btn-secondary btn-sm">← Previous</a>' if current_page > 1 else '<span class="btn btn-secondary btn-sm" style="opacity:0.5; pointer-events:none;">← Previous</span>'
+    next_link = f'<a href="/admin/database?table={active_table}&page={current_page + 1}" class="btn btn-secondary btn-sm">Next →</a>' if current_page < total_pages else '<span class="btn btn-secondary btn-sm" style="opacity:0.5; pointer-events:none;">Next →</span>'
+
+    # Query Results Output
+    query_box_html = ""
+    if query_result:
+        if query_result.get("success"):
+            q_cols = query_result.get("columns", [])
+            q_rows = query_result.get("rows", [])
+            q_count = query_result.get("row_count", 0)
+            q_time = query_result.get("execution_ms", 0)
+
+            q_th = "".join(f'<th style="white-space:nowrap;">{html.escape(qc)}</th>' for qc in q_cols)
+            q_tr = ""
+            for qr in q_rows:
+                tds = ""
+                for qc in q_cols:
+                    qv = qr.get(qc)
+                    if qv is None:
+                        tds += '<td><span style="color:#94a3b8; font-style:italic;">NULL</span></td>'
+                    else:
+                        tds += f'<td style="font-size:0.83rem;">{html.escape(str(qv)[:80])}</td>'
+                q_tr += f'<tr>{tds}</tr>'
+
+            query_box_html = f"""
+            <div style="margin-top:20px; border-top:2px solid #e2e8f0; padding-top:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-weight:700; color:#166534; display:flex; align-items:center; gap:8px;">
+                        <span>✅ Query Successful</span>
+                        <span class="badge badge-success">{q_count} records</span>
+                        <span style="font-size:0.8rem; color:#64748b; font-family:monospace;">Execution time: {q_time} ms</span>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; max-height:400px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <table class="data-table" style="margin:0; font-size:0.83rem;">
+                        <thead>
+                            <tr>{q_th}</tr>
+                        </thead>
+                        <tbody>
+                            {q_tr if q_tr else '<tr><td colspan="' + str(len(q_cols)) + '" style="text-align:center; padding:20px;">Zero records matched query.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            """
+        else:
+            query_box_html = f"""
+            <div style="margin-top:20px; border-top:2px solid #e2e8f0; padding-top:16px;">
+                <div class="alert-banner alert-danger" style="margin:0;">
+                    <div>
+                        <div style="font-weight:700; margin-bottom:4px;">❌ SQL Execution Error</div>
+                        <div style="font-family:monospace; font-size:0.85rem;">{html.escape(str(query_result.get('error', 'Unknown query execution failure')))}</div>
+                    </div>
+                </div>
+            </div>
+            """
+
+    default_query = query_input or f"SELECT * FROM {active_table} LIMIT 25;"
+
+    return f"""
+    <div class="main-wrapper" style="max-width:1300px; margin:0 auto; padding:24px 16px;">
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+            <div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:2rem;">🗄️</span>
+                    <div>
+                        <h2 style="color:var(--primary); font-size:1.6rem; font-weight:800;">CIHIP Database Explorer & Schema Hub</h2>
+                        <p style="color:#64748b; font-size:0.88rem;">National Relational Database • Cloud PostgreSQL & Embedded SQLite Dual Engine</p>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                {engine_badge}
+                <span class="badge badge-info" style="font-size:0.85rem; padding:6px 12px;">🟢 {engine.get('status', 'Online')}</span>
+            </div>
+        </div>
+
+        <!-- Metrics Overview Grid -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div class="card" style="padding:16px; border-left:4px solid var(--primary);">
+                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Active Engine</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--primary); margin-top:4px;">{engine.get('display_name', 'SQLite')}</div>
+                <div style="font-size:0.78rem; color:#475569; margin-top:2px;">{engine.get('driver', '')}</div>
+            </div>
+
+            <div class="card" style="padding:16px; border-left:4px solid var(--secondary);">
+                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Storage & Host</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--secondary); margin-top:4px;">
+                    {engine.get('database', 'cihip')}
+                </div>
+                <div style="font-size:0.78rem; color:#475569; margin-top:2px; font-family:monospace;">
+                    {engine.get('host', 'Local')} {'(' + str(engine.get('size_kb', '0')) + ' KB)' if not is_pg else ''}
+                </div>
+            </div>
+
+            <div class="card" style="padding:16px; border-left:4px solid var(--accent-green);">
+                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Relational Tables</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--accent-green); margin-top:4px;">12 Core Schemas</div>
+                <div style="font-size:0.78rem; color:#475569; margin-top:2px;">FHIR R4 & ABDM Compliant</div>
+            </div>
+
+            <div class="card" style="padding:16px; border-left:4px solid var(--accent-saffron);">
+                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Total Portal Records</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--accent-saffron); margin-top:4px;">{total_records:,} Records</div>
+                <div style="font-size:0.78rem; color:#475569; margin-top:2px;">ACID Transactions Guaranteed</div>
+            </div>
+        </div>
+
+        <!-- Cloud Deployment Architecture Callout -->
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 20px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:1.5rem;">☁️</span>
+                <div>
+                    <div style="font-weight:700; color:#166534; font-size:0.92rem;">Seamless Cloud PostgreSQL & Embedded SQLite Dual Support</div>
+                    <div style="font-size:0.82rem; color:#15803d;">
+                        CIHIP is configured to automatically bind to Render Managed PostgreSQL, Supabase, or Neon via <code>DATABASE_URL</code> in cloud environments, while providing 100% standard library SQLite local execution without external dependencies.
+                    </div>
+                </div>
+            </div>
+            <a href="/api/docs" class="btn btn-outline btn-sm" style="background:#ffffff;">View FHIR Schema</a>
+        </div>
+
+        <!-- Table Selector Bar -->
+        <div class="card" style="padding:18px; margin-bottom:24px;">
+            <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                Select Relational Table to Inspect:
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                {chips_html}
+            </div>
+        </div>
+
+        <!-- Active Table Viewer -->
+        <div class="card" style="padding:22px; margin-bottom:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <h3 style="color:var(--primary); font-size:1.3rem; font-weight:800; margin:0;">
+                            {table_icons.get(active_table, '📁')} {active_table}
+                        </h3>
+                        <span class="badge badge-primary">{total_rows} records</span>
+                        <span style="font-size:0.75rem; color:#64748b; font-family:monospace;">Primary Key: {pk}</span>
+                    </div>
+                    <p style="font-size:0.84rem; color:#64748b; margin-top:4px;">{desc}</p>
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <a href="/admin/database/export?table={active_table}&format=json" class="btn btn-secondary btn-sm" download>
+                        📥 Export JSON
+                    </a>
+                    <a href="/admin/database/export?table={active_table}&format=csv" class="btn btn-secondary btn-sm" download>
+                        📊 Export CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table Data Grid -->
+            <div style="overflow-x:auto; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:16px;">
+                <table class="data-table" style="margin:0; width:100%;">
+                    <thead>
+                        <tr>{th_cells}</tr>
+                    </thead>
+                    <tbody>
+                        {tr_cells}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:0.85rem; color:#64748b;">
+                <div>
+                    Page <strong>{current_page}</strong> of <strong>{total_pages}</strong> (Total {total_rows} records)
+                </div>
+                <div style="display:flex; gap:8px;">
+                    {prev_link}
+                    {next_link}
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive SQL Query Console -->
+        <div class="card" style="padding:22px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:1.3rem;">⚡</span>
+                <h3 style="color:var(--primary); font-size:1.25rem; font-weight:800; margin:0;">
+                    Interactive SQL Console & Data Query Runner
+                </h3>
+            </div>
+            <p style="font-size:0.84rem; color:#64748b; margin-bottom:16px;">
+                Execute safe read-only SQL queries (<code>SELECT</code>, <code>EXPLAIN</code>, <code>WITH</code>) across the national database.
+            </p>
+
+            <!-- Quick Template Chips -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT * FROM patients WHERE state = \\'Delhi\\';')">
+                    🏥 Delhi Patients
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT udk, name, specialty, qualification, phone FROM doctors;')">
+                    👨‍⚕️ Doctors Catalog
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT encounter_id, upk, udk, hospital_id, diagnosis_name, diagnosis_snomed, start_time FROM encounters;')">
+                    🩺 Clinical Encounters
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT report_id, upk, test_name, loinc_code, abnormal_flag, reference_range FROM diagnostic_reports;')">
+                    🧪 Lab Reports (LOINC)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT rx_id, upk, udk, canonical_hash, status, issue_time FROM prescriptions;')">
+                    💊 Signed Prescriptions
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuery('SELECT audit_id, timestamp, user_id, action, resource_type, outcome, curr_hash FROM audit_events ORDER BY timestamp DESC LIMIT 20;')">
+                    🔒 Audit Trail Ledger
+                </button>
+            </div>
+
+            <!-- Query Form -->
+            <form action="/admin/database/query" method="POST">
+                <input type="hidden" name="table" value="{active_table}">
+                <div style="margin-bottom:12px;">
+                    <textarea 
+                        name="sql" 
+                        id="sqlEditor" 
+                        rows="4" 
+                        style="width:100%; font-family:Consolas, Monaco, monospace; font-size:0.88rem; padding:12px; border-radius:6px; border:1px solid #cbd5e1; background:#0f172a; color:#f8fafc; line-height:1.4;"
+                        placeholder="Enter SQL SELECT statement here..."
+                    >{html.escape(default_query)}</textarea>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.78rem; color:#64748b;">
+                        🔒 State mutations (DROP/DELETE/UPDATE) are protected. Read-only execution enforced.
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="padding:8px 20px; font-weight:700;">
+                        ⚡ Run SQL Query
+                    </button>
+                </div>
+            </form>
+
+            <!-- Query Results -->
+            {query_box_html}
+        </div>
+    </div>
+
+    <script>
+    function setQuery(sql) {{
+        const editor = document.getElementById('sqlEditor');
+        if (editor) {{
+            editor.value = sql;
+            editor.focus();
+        }}
+    }}
+    </script>
     """

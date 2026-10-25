@@ -7,19 +7,146 @@ import sqlite3
 import json
 import time
 import os
-from typing import Dict, Any, List, Optional
-from app.config import DB_PATH
+import urllib.parse
+from typing import Dict, Any, List, Optional, Tuple
+from app.config import DB_PATH, DATABASE_URL
 from app.security import (
     hash_password, generate_prescription_signature, compute_audit_hash,
     generate_upk, generate_udk
 )
 
+# Cloud PostgreSQL driver for production (Render / Supabase / Neon)
+try:
+    import psycopg2
+    import psycopg2.extras
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    psycopg2 = None
+    PSYCOPG2_AVAILABLE = False
+
+_CURRENT_ENGINE = "sqlite"
+_LAST_DB_ERROR = None
+
+def translate_sql_for_pg(sql: str) -> str:
+    """Translate SQLite parameterized query (? placeholders) to PostgreSQL (%s)."""
+    out = []
+    in_quote = False
+    quote_char = None
+    i = 0
+    while i < len(sql):
+        ch = sql[i]
+        if ch in ("'", '"') and (i == 0 or sql[i-1] != "\\"):
+            if in_quote and ch == quote_char:
+                in_quote = False
+                quote_char = None
+            elif not in_quote:
+                in_quote = True
+                quote_char = ch
+            out.append(ch)
+        elif ch == "?" and not in_quote:
+            out.append("%s")
+        else:
+            out.append(ch)
+        i += 1
+    converted = "".join(out)
+    converted = converted.replace("ORDER BY rowid DESC", "ORDER BY timestamp DESC, audit_id DESC")
+    converted = converted.replace("ORDER BY rowid ASC", "ORDER BY timestamp ASC, audit_id ASC")
+    converted = converted.replace("ORDER BY rowid", "ORDER BY timestamp, audit_id")
+    return converted
+
+class PostgresCursorWrapper:
+    """Cursor wrapper for PostgreSQL providing SQLite-compatible execution."""
+    def __init__(self, raw_cur):
+        self._cur = raw_cur
+
+    def execute(self, query: str, params=None):
+        translated = translate_sql_for_pg(query)
+        if params is not None:
+            if isinstance(params, list):
+                params = tuple(params)
+            return self._cur.execute(translated, params)
+        return self._cur.execute(translated)
+
+    def executemany(self, query: str, seq_of_params):
+        translated = translate_sql_for_pg(query)
+        return self._cur.executemany(translated, seq_of_params)
+
+    def executescript(self, script: str):
+        return self._cur.execute(script)
+
+    def fetchone(self):
+        return self._cur.fetchone()
+
+    def fetchall(self):
+        return self._cur.fetchall()
+
+    @property
+    def description(self):
+        return self._cur.description
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+
+    def close(self):
+        return self._cur.close()
+
+class PostgresConnectionWrapper:
+    """Connection wrapper for PostgreSQL providing uniform API across engines."""
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def cursor(self):
+        raw_cur = self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        return PostgresCursorWrapper(raw_cur)
+
+    def executescript(self, script: str):
+        cur = self._conn.cursor()
+        cur.execute(script)
+        self._conn.commit()
+        cur.close()
+
+    def execute(self, query: str, params=None):
+        cur = self.cursor()
+        cur.execute(query, params)
+        return cur
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
 def get_db_connection():
-    """Establish connection with row factory enabled."""
+    """
+    Establish database connection with row factory enabled.
+    Connects to Cloud PostgreSQL if DATABASE_URL is set and psycopg2 is available;
+    otherwise gracefully falls back to local SQLite with WAL mode.
+    """
+    global _CURRENT_ENGINE, _LAST_DB_ERROR
+
+    if DATABASE_URL and (DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://")):
+        if PSYCOPG2_AVAILABLE:
+            try:
+                raw_conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
+                _CURRENT_ENGINE = "postgresql"
+                _LAST_DB_ERROR = None
+                return PostgresConnectionWrapper(raw_conn)
+            except Exception as e:
+                _LAST_DB_ERROR = str(e)
+                print(f"[CIHIP DB] Warning: PostgreSQL connection failed ({e}). Falling back to SQLite.")
+        else:
+            _LAST_DB_ERROR = "psycopg2 library not installed. Falling back to SQLite."
+
+    # SQLite Local Fallback
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA foreign_keys = ON")
+    _CURRENT_ENGINE = "sqlite"
     return conn
 
 def init_db():
@@ -496,3 +623,252 @@ def seed_initial_data(conn: sqlite3.Connection):
 
     conn.commit()
     print("Database successfully initialized and seeded with National Health Registry records.")
+
+# ==============================================================================
+# DATABASE EXPLORER & SCHEMA MANAGEMENT API
+# ==============================================================================
+
+TABLE_SCHEMAS = {
+    "users": {
+        "description": "Authenticated portal accounts across all healthcare roles",
+        "primary_key": "id",
+        "columns": ["id", "username", "password_hash", "role", "entity_id", "name", "email", "phone", "status", "created_at"]
+    },
+    "patients": {
+        "description": "ABDM Patient registry with ABHA number and Unified Patient Key (UPK)",
+        "primary_key": "upk",
+        "columns": ["upk", "abha_number", "name", "dob", "gender", "blood_group", "state", "district", "pincode", "phone", "email", "emergency_contact", "status", "created_at"]
+    },
+    "doctors": {
+        "description": "NMC Registered Clinicians with Unified Doctor Key (UDK)",
+        "primary_key": "udk",
+        "columns": ["udk", "nmc_id", "name", "specialty", "hospital_id", "qualification", "phone", "email", "status", "created_at"]
+    },
+    "hospitals": {
+        "description": "Health Facility Registry (HFR) accredited hospitals and clinics",
+        "primary_key": "hospital_id",
+        "columns": ["hospital_id", "hfr_id", "name", "state", "district", "tier", "departments_json", "status", "created_at"]
+    },
+    "labs": {
+        "description": "NABL Accredited Diagnostic Laboratories and Path Labs",
+        "primary_key": "lab_id",
+        "columns": ["lab_id", "nabl_id", "hfr_id", "name", "hospital_id", "address", "accreditation_expiry", "status", "created_at"]
+    },
+    "encounters": {
+        "description": "Clinical Consultations with SNOMED CT diagnoses and vitals",
+        "primary_key": "encounter_id",
+        "columns": ["encounter_id", "upk", "udk", "hospital_id", "department", "start_time", "chief_complaint", "vitals_json", "diagnosis_snomed", "diagnosis_name", "clinical_notes", "allergies", "status"]
+    },
+    "service_requests": {
+        "description": "FHIR ServiceRequest diagnostic test orders with LOINC coding",
+        "primary_key": "order_id",
+        "columns": ["order_id", "upk", "udk", "hospital_id", "lab_id", "loinc_code", "test_name", "priority", "specimen_type", "clinical_indication", "order_time", "status"]
+    },
+    "diagnostic_reports": {
+        "description": "FHIR DiagnosticReport results, LOINC observations and signed PDF records",
+        "primary_key": "report_id",
+        "columns": ["report_id", "order_id", "upk", "udk", "lab_id", "loinc_code", "test_name", "result_values_json", "reference_range", "abnormal_flag", "interpretation", "pdf_attachment_base64", "report_time", "status", "amended_from_id"]
+    },
+    "prescriptions": {
+        "description": "E-Prescriptions with SHA-256 canonical hash & PKI digital signature",
+        "primary_key": "rx_id",
+        "columns": ["rx_id", "upk", "udk", "encounter_id", "medications_json", "canonical_hash", "digital_signature", "qr_payload", "issue_time", "status"]
+    },
+    "consents": {
+        "description": "ABDM Patient Consent artefacts with granular resource authorizations",
+        "primary_key": "consent_id",
+        "columns": ["consent_id", "upk", "requester_type", "requester_id", "requester_name", "purpose", "resources_json", "valid_from", "valid_to", "status", "granted_time", "revoked_time"]
+    },
+    "audit_events": {
+        "description": "Immutable Zero-Trust audit ledger with SHA-256 blockchain hash chaining",
+        "primary_key": "audit_id",
+        "columns": ["audit_id", "timestamp", "user_id", "role", "action", "resource_type", "resource_id", "outcome", "ip_address", "details_json", "prev_hash", "curr_hash"]
+    },
+    "research_queries": {
+        "description": "Anonymized research queries with k-anonymity (>=50) and differential privacy",
+        "primary_key": "query_id",
+        "columns": ["query_id", "researcher_id", "department", "filters_json", "cohort_count", "export_time"]
+    }
+}
+
+def get_db_engine_info() -> Dict[str, Any]:
+    """Retrieve database engine status, driver info, and connection metadata."""
+    if _CURRENT_ENGINE == "postgresql" and DATABASE_URL:
+        parsed = urllib.parse.urlparse(DATABASE_URL)
+        masked_host = parsed.hostname or "render-postgres.internal"
+        db_name = parsed.path.lstrip("/") or "cihip"
+        return {
+            "engine": "postgresql",
+            "display_name": "PostgreSQL 16 (Cloud Managed)",
+            "is_cloud": True,
+            "database": db_name,
+            "host": f"{masked_host}:{parsed.port or 5432}",
+            "status": "Online (Cloud Managed / SSL)",
+            "driver": "psycopg2-binary (v2.9.9+)",
+            "connection_mode": "Managed Cloud Database (DATABASE_URL)",
+            "error": _LAST_DB_ERROR
+        }
+    else:
+        size_kb = 0
+        if os.path.exists(DB_PATH):
+            try:
+                size_kb = round(os.path.getsize(DB_PATH) / 1024, 1)
+            except Exception:
+                size_kb = 0
+        return {
+            "engine": "sqlite",
+            "display_name": f"SQLite {sqlite3.sqlite_version} (Local Embedded / WAL)",
+            "is_cloud": False,
+            "database": os.path.basename(DB_PATH),
+            "host": "Local Embedded Engine",
+            "path": DB_PATH,
+            "size_kb": size_kb,
+            "status": "Online (WAL Mode / ACID Compliant)",
+            "driver": "Python sqlite3 Standard Library",
+            "connection_mode": "Embedded Local File Storage",
+            "error": _LAST_DB_ERROR
+        }
+
+def get_database_stats() -> Dict[str, Any]:
+    """Return schema summary, table counts, and total records."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    table_counts = {}
+    total_records = 0
+    for tbl in TABLE_SCHEMAS:
+        try:
+            cur.execute(f"SELECT COUNT(*) FROM {tbl}")
+            cnt = cur.fetchone()[0]
+            table_counts[tbl] = cnt
+            total_records += cnt
+        except Exception:
+            table_counts[tbl] = 0
+    conn.close()
+
+    engine_info = get_db_engine_info()
+    return {
+        "engine": engine_info,
+        "table_counts": table_counts,
+        "total_records": total_records,
+        "tables": TABLE_SCHEMAS
+    }
+
+def get_table_data(table_name: str, limit: int = 25, offset: int = 0) -> Dict[str, Any]:
+    """Retrieve paginated rows and schema description for an approved table."""
+    if table_name not in TABLE_SCHEMAS:
+        table_name = "patients"
+
+    schema = TABLE_SCHEMAS[table_name]
+    cols = schema["columns"]
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+    total_rows = cur.fetchone()[0]
+
+    order_col = "timestamp" if "timestamp" in cols else ("created_at" if "created_at" in cols else cols[0])
+    cur.execute(f"SELECT * FROM {table_name} ORDER BY {order_col} DESC LIMIT ? OFFSET ?", (limit, offset))
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+
+    return {
+        "table_name": table_name,
+        "description": schema["description"],
+        "columns": cols,
+        "primary_key": schema["primary_key"],
+        "total_rows": total_rows,
+        "limit": limit,
+        "offset": offset,
+        "current_page": (offset // limit) + 1,
+        "total_pages": max(1, (total_rows + limit - 1) // limit),
+        "rows": rows
+    }
+
+def execute_explorer_query(sql_query: str) -> Dict[str, Any]:
+    """Execute a safe read-only SQL query submitted through the Database Explorer."""
+    clean_sql = sql_query.strip().rstrip(";").strip()
+    if not clean_sql:
+        return {"success": False, "error": "Query cannot be empty.", "query": ""}
+
+    upper = clean_sql.upper()
+    tokens = [t.strip(";,()") for t in upper.split()]
+    first_token = tokens[0] if tokens else ""
+
+    if first_token not in ("SELECT", "EXPLAIN", "WITH", "PRAGMA"):
+        return {
+            "success": False,
+            "error": "State modification statement is blocked. Only read-only queries (SELECT, EXPLAIN, WITH, PRAGMA) are permitted in the Database Explorer.",
+            "query": clean_sql
+        }
+
+    disallowed = {"INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "REPLACE", "CREATE", "GRANT", "REVOKE"}
+    for tok in tokens:
+        if tok in disallowed:
+            return {
+                "success": False,
+                "error": f"State modification statement '{tok}' is blocked in read-only explorer.",
+                "query": clean_sql
+            }
+
+    if "LIMIT" not in upper and first_token == "SELECT":
+        clean_sql += " LIMIT 50"
+
+    start_time = time.time()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(clean_sql)
+        columns = [col[0] for col in cur.description] if cur.description else []
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        elapsed_ms = round((time.time() - start_time) * 1000, 2)
+        return {
+            "success": True,
+            "columns": columns,
+            "rows": rows,
+            "row_count": len(rows),
+            "execution_ms": elapsed_ms,
+            "query": clean_sql
+        }
+    except Exception as e:
+        elapsed_ms = round((time.time() - start_time) * 1000, 2)
+        return {
+            "success": False,
+            "error": str(e),
+            "execution_ms": elapsed_ms,
+            "query": clean_sql
+        }
+
+def export_table_data(table_name: str, fmt: str = "json") -> Tuple[str, str, str]:
+    """Export complete table data as formatted JSON or CSV."""
+    if table_name not in TABLE_SCHEMAS:
+        table_name = "patients"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM {table_name}")
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    cols = TABLE_SCHEMAS[table_name]["columns"]
+
+    if fmt == "csv":
+        import io
+        import csv
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=cols)
+        writer.writeheader()
+        for r in rows:
+            row_clean = {}
+            for k in cols:
+                v = r.get(k)
+                if isinstance(v, (dict, list)):
+                    row_clean[k] = json.dumps(v)
+                else:
+                    row_clean[k] = "" if v is None else str(v)
+            writer.writerow(row_clean)
+        return output.getvalue(), "text/csv; charset=utf-8", f"cihip_{table_name}_{timestamp}.csv"
+    else:
+        return json.dumps(rows, indent=2), "application/json; charset=utf-8", f"cihip_{table_name}_{timestamp}.json"

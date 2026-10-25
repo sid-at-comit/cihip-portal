@@ -1,3 +1,5 @@
 # Centralized Indian Healthcare Information Portal (CIHIP) - Phase 1
-# This application is engineered exclusively with the Python 3 Standard Library!
-# Zero external pip dependencies required to run out of the box on Python 3.10+
+# This application is engineered exclusively with Python 3 Standard Library locally,
+# and supports Cloud PostgreSQL in production deployments (Render, Supabase, Neon).
+psycopg2-binary>=2.9.9
+

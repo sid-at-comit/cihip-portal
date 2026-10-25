@@ -20,7 +20,9 @@ from app.config import (
     PORT, HOST, PORTAL_NAME, SESSION_COOKIE_NAME, SESSION_EXPIRY_SECONDS
 )
 from app.database import (
-    init_db, get_db_connection, log_audit_event, verify_audit_chain_integrity
+    init_db, get_db_connection, log_audit_event, verify_audit_chain_integrity,
+    get_database_stats, get_table_data, execute_explorer_query, export_table_data,
+    get_db_engine_info
 )
 from app.security import (
     generate_session_token, generate_prescription_signature,
@@ -40,7 +42,8 @@ from app.views import (
     render_new_encounter_form, render_order_test_form, render_prescribe_form,
     render_doctor_review_report, render_lab_worklist, render_result_entry_form,
     render_hospital_portal, render_research_portal, render_security_portal,
-    render_api_docs_page, render_login_page, render_signup_page
+    render_api_docs_page, render_login_page, render_signup_page,
+    render_database_explorer
 )
 
 # In-memory session store (token -> {user_id, role, name, entity_id, expires_at, is_break_glass})
@@ -102,6 +105,14 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
         self.wfile.write(body)
+
+    def send_file(self, content_bytes: bytes, content_type: str, filename: str):
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content_bytes)))
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.end_headers()
+        self.wfile.write(content_bytes)
 
     def parse_form_data(self) -> Dict[str, Any]:
         content_length = int(self.headers.get("Content-Length", 0))
@@ -196,6 +207,17 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/docs":
             content = render_api_docs_page()
             return self.send_html(render_master("API & FHIR R4 Explorer", content, user, lang, "api"))
+
+        # Database Explorer Dashboard
+        if path in ("/admin/database", "/database"):
+            return self.handle_database_explorer(user, query, lang)
+
+        # Database Table Export (JSON / CSV)
+        if path == "/admin/database/export":
+            table = query.get("table", ["patients"])[0]
+            fmt = query.get("format", ["json"])[0]
+            content, content_type, filename = export_table_data(table, fmt)
+            return self.send_file(content.encode("utf-8"), content_type, filename)
 
         # FHIR & REST APIs
         if path.startswith("/api/v1/"):
@@ -811,6 +833,13 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             log_audit_event("SECURITY_OFFICER", "SYSTEM_ADMIN", "VERIFY_AUDIT_LEDGER", "AUDIT_CHAIN", "ALL", "SUCCESS", details=status)
             return self.redirect("/admin/security")
 
+        # Database query runner
+        if path == "/admin/database/query":
+            sql = form.get("sql", "")
+            active_table = form.get("table", "patients")
+            query_res = execute_explorer_query(sql)
+            return self.handle_database_explorer(user, {"table": [active_table]}, lang, query_result=query_res, query_input=sql)
+
         self.send_error(404, "Unknown form action")
 
     # --- HANDLER METHODS ---
@@ -1399,6 +1428,35 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         integrity = verify_audit_chain_integrity()
         content = render_security_portal(audit_events, integrity)
         return self.send_html(render_master("Zero-Trust Security & Audit", content, user, lang, "admin"))
+
+    def handle_database_explorer(
+        self,
+        user: Optional[Dict[str, Any]],
+        query: Dict[str, List[str]],
+        lang: str,
+        query_result: Optional[Dict[str, Any]] = None,
+        query_input: str = ""
+    ):
+        active_table = query.get("table", ["patients"])[0]
+        try:
+            page = max(1, int(query.get("page", ["1"])[0]))
+        except ValueError:
+            page = 1
+        limit = 25
+        offset = (page - 1) * limit
+
+        db_stats = get_database_stats()
+        table_data = get_table_data(active_table, limit=limit, offset=offset)
+
+        content = render_database_explorer(
+            db_stats=db_stats,
+            active_table=active_table,
+            table_data=table_data,
+            query_result=query_result,
+            query_input=query_input,
+            lang=lang
+        )
+        return self.send_html(render_master("Database Explorer & Schema Hub", content, user, lang, "database"))
 
     # --- API ENDPOINTS ---
     def handle_api_get(self, path: str, query: Dict[str, List[str]], user: Optional[Dict[str, Any]]):
