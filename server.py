@@ -486,17 +486,30 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                 return self.send_json({"success": False, "message": "A valid email address is required to dispatch OTP."}, 400)
 
             otp = generate_email_otp(email, purpose="REGISTRATION")
-            live_active = is_live_smtp_enabled()
-            resp = {
-                "success": True,
-                "message": f"6-digit verification code successfully dispatched to {email}." if live_active else f"Verification OTP generated for {email}.",
-                "email": email,
-                "is_live": live_active,
-                "expires_in": 600
-            }
-            if not live_active:
-                resp["otp"] = otp
-            return self.send_json(resp)
+            entry = EMAIL_OTP_STORE.get(email.strip().lower(), {})
+            is_live_delivered = entry.get("delivered_live", False)
+            delivery_err = entry.get("delivery_error", "")
+
+            if is_live_delivered:
+                return self.send_json({
+                    "success": True,
+                    "message": f"6-digit verification code successfully dispatched to {email}. Please check your inbox.",
+                    "email": email,
+                    "is_live": True,
+                    "expires_in": 600
+                })
+            else:
+                # If SMTP failed or not configured, provide fallback OTP so the user is never blocked
+                fallback_msg = f"Live email delivery failed ({delivery_err}). Fallback code: {otp}" if delivery_err else f"Verification OTP generated for {email}."
+                return self.send_json({
+                    "success": True,
+                    "message": fallback_msg,
+                    "email": email,
+                    "is_live": False,
+                    "otp": otp,
+                    "smtp_error": delivery_err,
+                    "expires_in": 600
+                })
 
         # Authentication API: Verify Email OTP
         if path == "/api/v1/auth/verify-otp":

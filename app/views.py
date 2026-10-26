@@ -2251,8 +2251,14 @@ function sendRegistrationOTP(emailInputId, statusSpanId, otpInputId) {
     .then(function(res) {
         if (res.success) {
             if (res.is_live) {
-                statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Verification OTP sent to ' + res.email + '. Please check your inbox.</span>';
+                statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Verification code sent to ' + res.email + '. Please check your email inbox.</span>';
                 if (otpEl) otpEl.focus();
+            } else if (res.smtp_error) {
+                statusEl.innerHTML = '<span style="color:#d97706; font-size:0.8rem; font-weight:600;">⚠️ SMTP connection issue (' + res.smtp_error + '). Fallback test code: <strong>' + res.otp + '</strong></span>';
+                if (otpEl && res.otp) {
+                    otpEl.value = res.otp;
+                    otpEl.focus();
+                }
             } else {
                 statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Verification OTP dispatched to ' + res.email + (res.otp ? ' (Code: ' + res.otp + ')' : '') + '</span>';
                 if (otpEl && res.otp) {

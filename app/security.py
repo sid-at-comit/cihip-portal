@@ -12,6 +12,7 @@ import math
 import random
 import re
 import os
+import ssl
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -286,20 +287,26 @@ def is_live_smtp_enabled() -> bool:
 def send_live_email_otp(email: str, otp: str, purpose: str = "REGISTRATION") -> Tuple[bool, str]:
     """
     Dispatch real live OTP email via configured SMTP relay (e.g. Gmail, SES, SendGrid, NIC).
-    If SMTP credentials are not configured, logs simulated dispatch.
+    Includes RFC 3207 EHLO handshakes, TLS context negotiation, and intelligent port fallback.
     """
     email_clean = str(email).strip().lower()
     if not is_live_smtp_enabled():
         print(f"[SECURE-EMAIL-GATEWAY:SIMULATED] SMTP not configured. OTP for {email_clean} ({purpose}): {otp} (Expires in 10m)")
         return False, "SMTP not configured (running in local simulation mode)."
 
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"CIHIP National Portal Verification Code: {otp}"
-        msg["From"] = f"National Healthcare Exchange <{SMTP_FROM}>"
-        msg["To"] = email_clean
+    clean_host = str(SMTP_HOST).strip().replace("https://", "").replace("http://", "").split(":")[0]
+    clean_user = str(SMTP_USER).strip()
+    # Strip spaces from app password if present (e.g. Google 16-char app passwords "xxxx yyyy zzzz wwww")
+    clean_password = str(SMTP_PASSWORD).strip().replace(" ", "") if "gmail" in clean_host.lower() else str(SMTP_PASSWORD).strip()
+    clean_from = str(SMTP_FROM).strip() or clean_user
+    port = int(SMTP_PORT)
 
-        text_content = f"""Centralized Indian Healthcare Information Portal (CIHIP)
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"CIHIP National Portal Verification Code: {otp}"
+    msg["From"] = f"National Healthcare Exchange <{clean_from}>"
+    msg["To"] = email_clean
+
+    text_content = f"""Centralized Indian Healthcare Information Portal (CIHIP)
 National Federated Health Information Exchange — Ayushman Bharat Digital Mission
 
 Your 6-Digit Email Verification Code: {otp}
@@ -308,49 +315,79 @@ This code is valid for 10 minutes. If you did not initiate this request, please 
 National Health Authority | Ministry of Health & Family Welfare
 """
 
-        html_content = f"""
-        <div style="font-family: Arial, sans-serif; max-width:600px; margin:0 auto; padding:24px; border:1px solid #e2e8f0; border-radius:8px;">
-            <div style="text-align:center; padding-bottom:16px; border-bottom:2px solid #005a9c;">
-                <div style="color:#005a9c; font-size:18px; font-weight:bold;">Centralized Indian Healthcare Information Portal (CIHIP)</div>
-                <div style="color:#64748b; font-size:12px; margin-top:4px;">National Federated Health Information Exchange | ABDM & DISHA Compliant</div>
-            </div>
-            <div style="padding:24px 0; text-align:center;">
-                <p style="font-size:15px; color:#334155; margin-bottom:16px;">
-                    Your 6-digit one-time email verification code is:
-                </p>
-                <div style="background:#f1f5f9; padding:16px; border-radius:8px; display:inline-block; letter-spacing:6px; font-size:32px; font-weight:bold; color:#005a9c; font-family:monospace;">
-                    {otp}
-                </div>
-                <p style="font-size:13px; color:#64748b; margin-top:16px;">
-                    This one-time passcode is valid for <strong>10 minutes</strong>. Do not share this code with anyone.
-                </p>
-            </div>
-            <div style="border-top:1px solid #e2e8f0; padding-top:16px; font-size:11px; color:#94a3b8; text-align:center;">
-                Ministry of Health & Family Welfare (MoHFW) | National Health Authority (NHA)<br>
-                Compliant with DISHA 2018 & Digital Personal Data Protection Act (DPDPA 2023)
-            </div>
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width:600px; margin:0 auto; padding:24px; border:1px solid #e2e8f0; border-radius:8px;">
+        <div style="text-align:center; padding-bottom:16px; border-bottom:2px solid #005a9c;">
+            <div style="color:#005a9c; font-size:18px; font-weight:bold;">Centralized Indian Healthcare Information Portal (CIHIP)</div>
+            <div style="color:#64748b; font-size:12px; margin-top:4px;">National Federated Health Information Exchange | ABDM & DISHA Compliant</div>
         </div>
-        """
+        <div style="padding:24px 0; text-align:center;">
+            <p style="font-size:15px; color:#334155; margin-bottom:16px;">
+                Your 6-digit one-time email verification code is:
+            </p>
+            <div style="background:#f1f5f9; padding:16px; border-radius:8px; display:inline-block; letter-spacing:6px; font-size:32px; font-weight:bold; color:#005a9c; font-family:monospace;">
+                {otp}
+            </div>
+            <p style="font-size:13px; color:#64748b; margin-top:16px;">
+                This one-time passcode is valid for <strong>10 minutes</strong>. Do not share this code with anyone.
+            </p>
+        </div>
+        <div style="border-top:1px solid #e2e8f0; padding-top:16px; font-size:11px; color:#94a3b8; text-align:center;">
+            Ministry of Health & Family Welfare (MoHFW) | National Health Authority (NHA)<br>
+            Compliant with DISHA 2018 & Digital Personal Data Protection Act (DPDPA 2023)
+        </div>
+    </div>
+    """
 
-        msg.attach(MIMEText(text_content, "plain"))
-        msg.attach(MIMEText(html_content, "html"))
+    msg.attach(MIMEText(text_content, "plain"))
+    msg.attach(MIMEText(html_content, "html"))
 
-        if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10)
-        else:
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-            if SMTP_USE_TLS:
-                server.starttls()
+    context = ssl.create_default_context()
 
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail(SMTP_FROM, [email_clean], msg.as_string())
-        server.quit()
+    # Connection strategies: try designated strategy first, then fallback to alternate SSL/TLS if connection dropped
+    strategies = []
+    if port == 465:
+        strategies.append(("SSL", 465))
+        strategies.append(("STARTTLS", 587))
+    else:
+        strategies.append(("STARTTLS", port))
+        strategies.append(("SSL", 465))
 
-        print(f"[SECURE-EMAIL-GATEWAY:LIVE] Successfully dispatched live OTP email to {email_clean}")
-        return True, f"Live verification OTP sent to {email_clean}."
-    except Exception as e:
-        print(f"[SECURE-EMAIL-GATEWAY:ERROR] Failed to send live email via SMTP: {e}")
-        return False, f"Failed to send email via SMTP: {str(e)}"
+    last_error = ""
+    for mode, try_port in strategies:
+        server = None
+        try:
+            if mode == "SSL":
+                server = smtplib.SMTP_SSL(clean_host, try_port, context=context, timeout=12)
+            else:
+                server = smtplib.SMTP(clean_host, try_port, timeout=12)
+                server.ehlo()
+                if SMTP_USE_TLS:
+                    server.starttls(context=context)
+                    server.ehlo()
+
+            server.login(clean_user, clean_password)
+            server.sendmail(clean_from, [email_clean], msg.as_string())
+            try:
+                server.quit()
+            except Exception:
+                pass
+            print(f"[SECURE-EMAIL-GATEWAY:LIVE] Successfully dispatched live OTP email to {email_clean} via {clean_host}:{try_port} ({mode})")
+            return True, f"Live verification OTP sent to {email_clean}."
+        except Exception as e:
+            last_error = str(e)
+            if server:
+                try:
+                    server.close()
+                except Exception:
+                    pass
+            # If authentication failure, don't retry another port - credentials need attention
+            if "Authentication" in last_error or "Username and Password not accepted" in last_error or "535" in last_error:
+                break
+
+    print(f"[SECURE-EMAIL-GATEWAY:ERROR] Failed to send live email via SMTP ({clean_host}:{port}): {last_error}")
+    print(f"[SECURE-EMAIL-GATEWAY:FALLBACK] Using fallback console dispatch for {email_clean}: {otp}")
+    return False, last_error
 
 def generate_email_otp(email: str, purpose: str = "REGISTRATION") -> str:
     """
@@ -372,7 +409,9 @@ def generate_email_otp(email: str, purpose: str = "REGISTRATION") -> str:
     }
     
     # Attempt real live SMTP dispatch if configured
-    send_live_email_otp(email_clean, otp, purpose)
+    is_live_sent, delivery_msg = send_live_email_otp(email_clean, otp, purpose)
+    EMAIL_OTP_STORE[email_clean]["delivered_live"] = is_live_sent
+    EMAIL_OTP_STORE[email_clean]["delivery_error"] = delivery_msg if not is_live_sent else ""
     return otp
 
 def verify_email_otp(email: str, entered_otp: str, purpose: str = "REGISTRATION") -> Tuple[bool, str]:
