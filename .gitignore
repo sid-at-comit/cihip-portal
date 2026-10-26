@@ -18,3 +18,8 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
