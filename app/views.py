@@ -2085,6 +2085,14 @@ def render_api_docs_page() -> str:
                     </div>
                     <small style="color:#64748b;">Recalculates and validates SHA-256 audit ledger blockchain integrity.</small>
                 </div>
+
+                <div style="border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f0fdf4;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="badge badge-primary">GET</span>
+                        <a href="/api/v1/identity/blinded-key?type=patient&id=91-4567-8901-2345" target="_blank" style="font-family:monospace; font-weight:700;">/api/v1/identity/blinded-key?type=patient&id={abha}</a>
+                    </div>
+                    <small style="color:#15803d;">Deterministic HMAC-SHA256 Blinded Key generator & verifier (Idea 4 / DPDPA 2023).</small>
+                </div>
             </div>
         </div>
     </div>

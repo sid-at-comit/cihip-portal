@@ -15,7 +15,8 @@ from app.database import init_db, get_db_connection, log_audit_event, verify_aud
 from app.security import (
     generate_upk, generate_udk, generate_prescription_signature,
     verify_prescription_signature, evaluate_zero_trust_access,
-    apply_k_anonymity_mask, apply_differential_privacy_noise
+    apply_k_anonymity_mask, apply_differential_privacy_noise,
+    verify_blinded_key
 )
 from app.fhir import (
     to_fhir_patient, to_fhir_practitioner, to_fhir_organization,
@@ -214,6 +215,40 @@ class TestCIHIPCore(unittest.TestCase):
         self.assertIn("CIHIP National Health Exchange", html_out)
         self.assertIn("Dr. Priya Nair", html_out)
         self.assertIn("Hello CIHIP", html_out)
+
+    def test_09_idea_4_deterministic_hmac_blinded_keys(self):
+        """Test Idea 4: Deterministic HMAC-SHA256 Blinded UPK and UDK generation and verification."""
+        # 1. Determinism: Same ABHA ID yields identical UPK
+        abha_1 = "91-9988-7766-5544"
+        upk_a = generate_upk(abha_1)
+        upk_b = generate_upk(abha_1)
+        self.assertEqual(upk_a, upk_b)
+        self.assertTrue(upk_a.startswith("UPK-IND-2026-"))
+
+        # 2. Irreversibility: Raw ABHA digits are not exposed
+        self.assertNotIn("9988", upk_a)
+        self.assertNotIn("7766", upk_a)
+
+        # 3. Distinctness: Different ABHA IDs yield distinct UPKs
+        abha_2 = "91-1122-3344-5566"
+        upk_c = generate_upk(abha_2)
+        self.assertNotEqual(upk_a, upk_c)
+
+        # 4. Cryptographic Verification
+        self.assertTrue(verify_blinded_key(abha_1, upk_a, "PATIENT"))
+        self.assertFalse(verify_blinded_key(abha_2, upk_a, "PATIENT"))
+
+        # 5. Doctor UDK Determinism & Verification
+        nmc_1 = "NMC-MCI-2025-78192"
+        udk_a = generate_udk(nmc_1)
+        udk_b = generate_udk(nmc_1)
+        self.assertEqual(udk_a, udk_b)
+        self.assertTrue(udk_a.startswith("UDK-IND-2026-"))
+        self.assertTrue(verify_blinded_key(nmc_1, udk_a, "DOCTOR"))
+
+        # 6. Backward compatibility with seeded national demo records
+        self.assertEqual(generate_upk("91-4567-8901-2345"), "UPK-IND-2026-9041")
+        self.assertEqual(generate_udk("NMC-MCI-2015-88492"), "UDK-IND-2026-4412")
 
 if __name__ == "__main__":
     unittest.main()

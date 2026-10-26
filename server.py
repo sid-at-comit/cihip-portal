@@ -27,7 +27,7 @@ from app.database import (
 from app.security import (
     generate_session_token, generate_prescription_signature,
     hash_password, verify_password, evaluate_zero_trust_access, apply_k_anonymity_mask, apply_differential_privacy_noise,
-    generate_upk, generate_udk
+    generate_upk, generate_udk, verify_blinded_key
 )
 from app.fhir import (
     to_fhir_patient, to_fhir_practitioner, to_fhir_organization,
@@ -500,27 +500,41 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             phone = form.get("phone", "").strip()
 
             if role == "PATIENT":
-                entity_id = generate_upk()
                 abha = form.get("abha_number", "").strip() or f"91-{int(time.time()) % 10000:04d}-5566-7788"
+                entity_id = generate_upk(abha)
                 dob = form.get("dob", "1995-05-15")
                 gender = form.get("gender", "Male")
                 blood_group = form.get("blood_group", "B+")
                 state = form.get("state", "Delhi")
                 district = form.get("district", "New Delhi")
                 pincode = form.get("pincode", "110001")
-                cur.execute("""
-                    INSERT INTO patients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'ACTIVE', ?)
-                """, (entity_id, abha, name, dob, gender, blood_group, state, district, pincode, phone, email, now_iso))
+
+                # Deduplication check: if patient with this ABHA or UPK already exists, link to it
+                cur.execute("SELECT upk FROM patients WHERE abha_number = ? OR upk = ?", (abha, entity_id))
+                existing_pat = cur.fetchone()
+                if existing_pat:
+                    entity_id = existing_pat["upk"]
+                else:
+                    cur.execute("""
+                        INSERT INTO patients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'ACTIVE', ?)
+                    """, (entity_id, abha, name, dob, gender, blood_group, state, district, pincode, phone, email, now_iso))
 
             elif role == "DOCTOR":
-                entity_id = generate_udk()
                 nmc_id = form.get("nmc_id", "").strip() or f"NMC-MCI-2026-{os.urandom(2).hex().upper()}"
+                entity_id = generate_udk(nmc_id)
                 specialty = form.get("specialty", "General Medicine")
                 hospital_id = form.get("hospital_id", "HOSP-AIIMS-DEL")
                 qualification = form.get("qualification", "MBBS, MD")
-                cur.execute("""
-                    INSERT INTO doctors VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'VERIFIED', ?)
-                """, (entity_id, nmc_id, name, specialty, hospital_id, qualification, phone, email, now_iso))
+
+                # Deduplication check: if doctor with this NMC ID or UDK already exists, link to it
+                cur.execute("SELECT udk FROM doctors WHERE nmc_id = ? OR udk = ?", (nmc_id, entity_id))
+                existing_doc = cur.fetchone()
+                if existing_doc:
+                    entity_id = existing_doc["udk"]
+                else:
+                    cur.execute("""
+                        INSERT INTO doctors VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'VERIFIED', ?)
+                    """, (entity_id, nmc_id, name, specialty, hospital_id, qualification, phone, email, now_iso))
 
             elif role == "LAB_TECHNICIAN":
                 entity_id = f"LAB-{int(time.time())}-{os.urandom(2).hex().upper()}"
@@ -1599,6 +1613,28 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/audit/verify":
             conn.close()
             return self.send_json(verify_audit_chain_integrity())
+
+        # 12. Idea 4: Deterministic HMAC-Blinded Key Generator API
+        if path == "/api/v1/identity/blinded-key":
+            conn.close()
+            entity_type = query.get("type", ["patient"])[0].upper()
+            raw_id = query.get("id", query.get("identifier", ["91-4567-8901-2345"]))[0]
+            if entity_type == "DOCTOR":
+                blinded_key = generate_udk(raw_id)
+            else:
+                blinded_key = generate_upk(raw_id)
+            masked_id = raw_id[:3] + "X" * max(0, len(raw_id) - 6) + raw_id[-3:] if len(raw_id) > 6 else "HIDDEN"
+            return self.send_json({
+                "scheme": "Idea 4: Deterministic HMAC-SHA256 Blinded Key",
+                "standard": "ABDM / DPDPA 2023 Section 8 Privacy-Preserving De-identification",
+                "entity_type": entity_type,
+                "input_identifier_masked": masked_id,
+                "blinded_key": blinded_key,
+                "deterministic": True,
+                "irreversible": True,
+                "encoding": "Crockford Base32 (no I, L, O, U)",
+                "verification_valid": verify_blinded_key(raw_id, blinded_key, entity_type)
+            })
 
         conn.close()
         return self.send_json({"error": "Unknown API endpoint"}, 404)

@@ -298,5 +298,22 @@ class TestFullClinicalPipeline(unittest.TestCase):
         self.assertTrue(integrity["is_intact"])
         self.assertEqual(len(integrity["tampered_ids"]), 0)
 
+    def test_09_idea_4_blinded_key_endpoint(self):
+        """Test API endpoint for Idea 4 Deterministic Blinded Key Generation."""
+        code, _, body = execute_mock_request("GET", "/api/v1/identity/blinded-key?type=patient&id=91-9988-7766-5544")
+        self.assertEqual(code, 200)
+        data = json.loads(body.decode("utf-8"))
+        self.assertTrue(data["deterministic"])
+        self.assertTrue(data["verification_valid"])
+        self.assertTrue(data["blinded_key"].startswith("UPK-IND-2026-"))
+        self.assertEqual(data["encoding"], "Crockford Base32 (no I, L, O, U)")
+
+        # Doctor UDK test
+        code_doc, _, body_doc = execute_mock_request("GET", "/api/v1/identity/blinded-key?type=doctor&id=NMC-MCI-2024-55123")
+        self.assertEqual(code_doc, 200)
+        doc_data = json.loads(body_doc.decode("utf-8"))
+        self.assertTrue(doc_data["blinded_key"].startswith("UDK-IND-2026-"))
+        self.assertTrue(doc_data["verification_valid"])
+
 if __name__ == "__main__":
     unittest.main()
