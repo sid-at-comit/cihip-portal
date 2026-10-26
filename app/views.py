@@ -2118,43 +2118,43 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
         "PATIENT": {
             "title": "Patient & Citizen Login",
             "badge": '<span class="badge badge-success">ABHA / UPK Unified Access</span>',
-            "id_label": "ABHA Number (14-digit) or Username / UPK:",
-            "id_placeholder": "e.g. 91-4567-8901-2345 or patient_rajesh",
+            "id_label": "ABHA Number, Registered Email or Username / UPK:",
+            "id_placeholder": "e.g. rajesh.sharma@example.com or 91-4567-8901-2345",
             "redirect_note": "Access your Longitudinal Health Record, e-prescriptions with QR codes, and consent dashboard."
         },
         "DOCTOR": {
             "title": "Clinical Practitioner Login",
             "badge": '<span class="badge badge-primary">NMC / HPR Verified Clinicians</span>',
-            "id_label": "NMC Registration Number or Username / UDK:",
-            "id_placeholder": "e.g. NMC-MCI-2015-88492 or doctor_priya",
+            "id_label": "NMC Registration Number, Official Email or UDK:",
+            "id_placeholder": "e.g. dr.priya.nair@aiims.edu.in or NMC-MCI-2015-88492",
             "redirect_note": "Conduct consultations, record encounters with SNOMED CT, order tests, and issue PKI-signed prescriptions."
         },
         "LAB_TECHNICIAN": {
             "title": "Diagnostic Laboratory Portal",
             "badge": '<span class="badge badge-purple">NABL Accredited Diagnostics</span>',
-            "id_label": "NABL Certificate Number or Username / Lab ID:",
-            "id_placeholder": "e.g. NABL-MED-2024-9912 or lab_ramesh",
+            "id_label": "NABL Certificate Number, Lab Email or Lab ID:",
+            "id_placeholder": "e.g. ramesh.verma@apexdiagnostics.in or NABL-MED-2024-9912",
             "redirect_note": "Manage prioritized test queues, input structured LOINC observations, and authorize diagnostic reports."
         },
         "HOSPITAL_ADMIN": {
             "title": "Hospital Facility Administration",
             "badge": '<span class="badge badge-warning">HFR Registered Institutions</span>',
-            "id_label": "HFR Facility Registry ID or Username:",
-            "id_placeholder": "e.g. HFR-DEL-000101 or admin_aiims",
+            "id_label": "HFR Facility Registry ID, Hospital Email or Username:",
+            "id_placeholder": "e.g. admin@aiims.edu.in or HFR-DEL-000101",
             "redirect_note": "Supervise clinical departments, verify doctor credentials, and audit facility data exchange metrics."
         },
         "RESEARCHER": {
             "title": "ICMR Epidemiological Research Gateway",
             "badge": '<span class="badge badge-info">De-Identified Public Health Analytics</span>',
-            "id_label": "Researcher Registry ID or Username:",
-            "id_placeholder": "e.g. ICMR-RES-2026 or researcher_sunita",
+            "id_label": "Researcher Registry ID, ICMR Email or Username:",
+            "id_placeholder": "e.g. dr.sunita.k@icmr.gov.in or ICMR-RES-2026",
             "redirect_note": "Query privacy-preserved cohorts with k-anonymity (k >= 50) and export de-identified FHIR bundles."
         },
         "SYSTEM_ADMIN": {
             "title": "Zero-Trust SecOps Administration",
             "badge": '<span class="badge badge-danger">National Governance & Ledger Audit</span>',
-            "id_label": "Security Admin Username / ID:",
-            "id_placeholder": "e.g. admin_cihip or CIHIP-HQ-DELHI",
+            "id_label": "Security Admin Username, Email or Admin ID:",
+            "id_placeholder": "e.g. secops@cihip.gov.in or admin_cihip",
             "redirect_note": "Monitor real-time zero-trust access evaluations and verify SHA-256 blockchain audit ledger integrity."
         }
     }.get(role, {})
@@ -2227,6 +2227,44 @@ def render_login_page(role: str = "PATIENT", error_message: Optional[str] = None
     </div>
     """
 
+
+SIGNUP_OTP_SCRIPT = """
+<script>
+function sendRegistrationOTP(emailInputId, statusSpanId, otpInputId) {
+    var emailEl = document.getElementById(emailInputId);
+    var statusEl = document.getElementById(statusSpanId);
+    var otpEl = document.getElementById(otpInputId);
+    if (!emailEl || !emailEl.value || emailEl.value.indexOf('@') === -1) {
+        alert('Please enter a valid email address first.');
+        if (emailEl) emailEl.focus();
+        return;
+    }
+    statusEl.innerHTML = '<span style="color:#0284c7;">Dispatching 6-digit OTP...</span>';
+    var params = new URLSearchParams();
+    params.append('email', emailEl.value.trim());
+    fetch('/api/v1/auth/send-otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: params.toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        if (res.success) {
+            statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ OTP sent to ' + res.email + ' (Code: ' + res.otp + ')</span>';
+            if (otpEl) {
+                otpEl.value = res.otp;
+                otpEl.focus();
+            }
+        } else {
+            statusEl.innerHTML = '<span style="color:#dc2626;">✗ ' + (res.message || 'Error sending OTP') + '</span>';
+        }
+    })
+    .catch(function(e) {
+        statusEl.innerHTML = '<span style="color:#dc2626;">✗ Error connecting to OTP gateway</span>';
+    });
+}
+</script>
+"""
 
 def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = None, lang: str = "en", hospitals: Optional[List[Dict[str, Any]]] = None) -> str:
     """Render comprehensive national onboarding / sign-up portal for Patients, Doctors, Labs, and Hospitals."""
@@ -2323,9 +2361,18 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
                 <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210" value="+91 98765 00112" required>
             </div>
             <div class="form-group">
-                <label class="form-label">Email Address (Optional):</label>
-                <input type="email" name="email" class="form-control" placeholder="patient@example.com">
+                <label class="form-label">Mandatory Email Address:</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="email" id="reg_email_pat" name="email" class="form-control" placeholder="patient@example.com" required>
+                    <button type="button" class="btn btn-secondary" onclick="sendRegistrationOTP('reg_email_pat', 'otp_status_pat', 'reg_otp_pat')" style="white-space:nowrap; font-size:0.85rem;">Send OTP</button>
+                </div>
+                <span id="otp_status_pat" style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;"></span>
             </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email Verification OTP (6-Digit Code):</label>
+            <input type="text" id="reg_otp_pat" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2375,13 +2422,22 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         </div>
         <div class="grid-2">
             <div class="form-group">
-                <label class="form-label">Professional Email:</label>
-                <input type="email" name="email" class="form-control" placeholder="doctor@hospital.edu.in" required>
+                <label class="form-label">Mandatory Professional Email:</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="email" id="reg_email_doc" name="email" class="form-control" placeholder="doctor@hospital.edu.in" required>
+                    <button type="button" class="btn btn-secondary" onclick="sendRegistrationOTP('reg_email_doc', 'otp_status_doc', 'reg_otp_doc')" style="white-space:nowrap; font-size:0.85rem;">Send OTP</button>
+                </div>
+                <span id="otp_status_doc" style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;"></span>
             </div>
             <div class="form-group">
                 <label class="form-label">Phone Number:</label>
                 <input type="text" name="phone" class="form-control" placeholder="+91 98111 22334" required>
             </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email Verification OTP (6-Digit Code):</label>
+            <input type="text" id="reg_otp_doc" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2423,13 +2479,22 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         </div>
         <div class="grid-2">
             <div class="form-group">
+                <label class="form-label">Mandatory Official Lab Email:</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="email" id="reg_email_lab" name="email" class="form-control" placeholder="contact@labname.in" required>
+                    <button type="button" class="btn btn-secondary" onclick="sendRegistrationOTP('reg_email_lab', 'otp_status_lab', 'reg_otp_lab')" style="white-space:nowrap; font-size:0.85rem;">Send OTP</button>
+                </div>
+                <span id="otp_status_lab" style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;"></span>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Lab Contact Phone:</label>
                 <input type="text" name="phone" class="form-control" placeholder="+91 98188 00112" required>
             </div>
-            <div class="form-group">
-                <label class="form-label">Official Lab Email:</label>
-                <input type="email" name="email" class="form-control" placeholder="contact@labname.in" required>
-            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email Verification OTP (6-Digit Code):</label>
+            <input type="text" id="reg_otp_lab" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2492,9 +2557,18 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
                 <input type="text" name="admin_name" class="form-control" placeholder="e.g. Dr. Rajesh Goel (Superintendent)" required>
             </div>
             <div class="form-group">
-                <label class="form-label">Admin Email:</label>
-                <input type="email" name="email" class="form-control" placeholder="admin@hospital.com" required>
+                <label class="form-label">Mandatory Admin Email:</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="email" id="reg_email_hosp" name="email" class="form-control" placeholder="admin@hospital.com" required>
+                    <button type="button" class="btn btn-secondary" onclick="sendRegistrationOTP('reg_email_hosp', 'otp_status_hosp', 'reg_otp_hosp')" style="white-space:nowrap; font-size:0.85rem;">Send OTP</button>
+                </div>
+                <span id="otp_status_hosp" style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;"></span>
             </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email Verification OTP (6-Digit Code):</label>
+            <input type="text" id="reg_otp_hosp" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2551,6 +2625,58 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
             <div style="border-top:1px solid #e2e8f0; margin-top:16px; padding-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
                 <span>🇮🇳 National Medical Commission & NABL Verified</span>
                 <span>🔒 DISHA 2018 & DPDPA 2023 Compliant</span>
+            </div>
+        </div>
+    </div>
+
+    {SIGNUP_OTP_SCRIPT}
+    """
+
+def render_otp_verification_page(email: str = "", role: str = "PATIENT", error_message: Optional[str] = None, lang: str = "en") -> str:
+    """Render standalone email OTP verification portal."""
+    err_html = ""
+    if error_message:
+        err_html = f"""
+        <div class="alert-banner alert-danger" style="margin-bottom:20px;">
+            <span>⚠️ {html.escape(error_message)}</span>
+        </div>
+        """
+    return f"""
+    <div style="max-width:540px; margin:40px auto;">
+        <div class="card" style="box-shadow:var(--shadow-md); border-top:4px solid var(--primary); text-align:center;">
+            <div style="margin-bottom:16px;">
+                <span class="badge badge-primary">Two-Factor Authentication</span>
+            </div>
+            <h2 style="color:var(--primary); font-size:1.5rem; font-weight:800; margin-bottom:8px;">Email Verification Required</h2>
+            <p style="font-size:0.9rem; color:#64748b; margin-bottom:20px;">
+                A 6-digit cryptographic verification code has been dispatched to your email address:
+                <br><strong style="color:var(--text-dark);">{html.escape(email or 'your registered email')}</strong>
+            </p>
+
+            {err_html}
+
+            <form action="/verify-otp" method="POST">
+                <input type="hidden" name="email" value="{html.escape(email)}">
+                <input type="hidden" name="role" value="{html.escape(role)}">
+
+                <div class="form-group" style="text-align:left;">
+                    <label class="form-label" style="text-align:center; display:block; font-weight:700;">Enter 6-Digit Verification Code:</label>
+                    <input type="text" name="otp_code" class="form-control" placeholder="• • • • • •" maxlength="6" autofocus required
+                           style="letter-spacing:6px; font-size:1.4rem; font-weight:800; text-align:center; max-width:240px; margin:0 auto;">
+                    <span style="font-size:0.75rem; color:#64748b; text-align:center; display:block; margin-top:6px;">
+                        Developer Test Code: <code>123456</code>
+                    </span>
+                </div>
+
+                <div style="margin-top:24px;">
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-weight:700;">
+                        Verify Email & Complete Sign-In →
+                    </button>
+                </div>
+            </form>
+
+            <div style="margin-top:20px; font-size:0.85rem; color:#64748b;">
+                Didn't receive the email code? <a href="/signin?role={html.escape(role)}" style="color:var(--primary); font-weight:600;">Return to Sign In</a>
             </div>
         </div>
     </div>

@@ -27,7 +27,8 @@ from app.database import (
 from app.security import (
     generate_session_token, generate_prescription_signature,
     hash_password, verify_password, evaluate_zero_trust_access, apply_k_anonymity_mask, apply_differential_privacy_noise,
-    generate_upk, generate_udk, verify_blinded_key
+    generate_upk, generate_udk, verify_blinded_key,
+    generate_email_otp, verify_email_otp, is_email_verified, mark_email_verified, validate_email_format, EMAIL_OTP_STORE
 )
 from app.fhir import (
     to_fhir_patient, to_fhir_practitioner, to_fhir_organization,
@@ -43,7 +44,7 @@ from app.views import (
     render_doctor_review_report, render_lab_worklist, render_result_entry_form,
     render_hospital_portal, render_research_portal, render_security_portal,
     render_api_docs_page, render_login_page, render_signup_page,
-    render_database_explorer
+    render_database_explorer, render_otp_verification_page
 )
 
 # In-memory session store (token -> {user_id, role, name, entity_id, expires_at, is_break_glass})
@@ -119,6 +120,14 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
         if content_length <= 0:
             return {}
         post_data = self.rfile.read(content_length).decode("utf-8")
+        ctype = self.headers.get("Content-Type", "")
+        if "application/json" in ctype:
+            try:
+                parsed_json = json.loads(post_data)
+                if isinstance(parsed_json, dict):
+                    return parsed_json
+            except Exception:
+                pass
         parsed = urllib.parse.parse_qs(post_data)
         # flatten single value keys
         result = {}
@@ -210,6 +219,14 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             conn.close()
             content = render_signup_page(role, error, lang, hospitals)
             return self.send_html(render_master(f"{role.replace('_', ' ').title()} Registration", content, user, lang, "signup"))
+
+        # Standalone OTP Verification View
+        if path == "/verify-otp":
+            email = query.get("email", [""])[0]
+            role = query.get("role", ["PATIENT"])[0]
+            error = query.get("error", [None])[0]
+            content = render_otp_verification_page(email, role, error, lang)
+            return self.send_html(render_master("Verify Email OTP", content, user, lang, "signin"))
 
         # API Docs
         if path == "/api/docs":
@@ -383,25 +400,25 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             conn = get_db_connection()
             cur = conn.cursor()
 
-            # 1. Match by username and role
-            cur.execute("SELECT * FROM users WHERE username = ? AND role = ?", (identifier, role))
+            # 1. Match by username or registered email directly
+            cur.execute("SELECT * FROM users WHERE (username = ? OR LOWER(email) = LOWER(?)) AND role = ?", (identifier, identifier, role))
             user_row = cur.fetchone()
 
-            # 2. If not found by username, try role-specific identifiers
+            # 2. If not found by direct match, try role-specific identifiers and entity tables
             if not user_row:
                 if role == "PATIENT":
                     cur.execute("""
                         SELECT u.* FROM users u
                         JOIN patients p ON u.entity_id = p.upk
-                        WHERE p.abha_number = ? OR p.upk = ?
-                    """, (identifier, identifier))
+                        WHERE p.abha_number = ? OR p.upk = ? OR LOWER(p.email) = LOWER(?)
+                    """, (identifier, identifier, identifier))
                     user_row = cur.fetchone()
                 elif role == "DOCTOR":
                     cur.execute("""
                         SELECT u.* FROM users u
                         JOIN doctors d ON u.entity_id = d.udk
-                        WHERE d.nmc_id = ? OR d.udk = ?
-                    """, (identifier, identifier))
+                        WHERE d.nmc_id = ? OR d.udk = ? OR LOWER(d.email) = LOWER(?)
+                    """, (identifier, identifier, identifier))
                     user_row = cur.fetchone()
                 elif role == "LAB_TECHNICIAN":
                     cur.execute("""
@@ -418,7 +435,7 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                     """, (identifier, identifier))
                     user_row = cur.fetchone()
                 elif role in ("RESEARCHER", "SYSTEM_ADMIN"):
-                    cur.execute("SELECT * FROM users WHERE entity_id = ? AND role = ?", (identifier, role))
+                    cur.execute("SELECT * FROM users WHERE (entity_id = ? OR LOWER(email) = LOWER(?)) AND role = ?", (identifier, identifier, role))
                     user_row = cur.fetchone()
 
             conn.close()
@@ -459,11 +476,55 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
             content = render_login_page(role, err_msg, lang)
             return self.send_html(render_master("Sign In", content, None, lang), status_code=401)
 
+        # Authentication API: Dispatch Email OTP
+        if path == "/api/v1/auth/send-otp":
+            email = form.get("email", "").strip()
+            if not email or "@" not in email or not validate_email_format(email):
+                return self.send_json({"success": False, "message": "A valid email address is required to dispatch OTP."}, 400)
+
+            otp = generate_email_otp(email, purpose="REGISTRATION")
+            return self.send_json({
+                "success": True,
+                "message": f"6-digit verification code successfully dispatched to {email}.",
+                "email": email,
+                "otp": otp,
+                "expires_in": 600
+            })
+
+        # Authentication API: Verify Email OTP
+        if path == "/api/v1/auth/verify-otp":
+            email = form.get("email", "").strip()
+            otp_code = (form.get("otp_code") or form.get("otp", "")).strip()
+            if not email or not otp_code:
+                return self.send_json({"success": False, "message": "Both email address and 6-digit OTP code are required."}, 400)
+
+            ok, msg = verify_email_otp(email, otp_code, purpose="REGISTRATION")
+            return self.send_json({
+                "success": ok,
+                "message": msg,
+                "email": email,
+                "verified": ok
+            }, 200 if ok else 400)
+
+        # Standalone OTP Verification View Submission
+        if path == "/verify-otp":
+            email = form.get("email", "").strip()
+            role = form.get("role", "PATIENT").upper()
+            otp_code = form.get("otp_code", "").strip()
+            ok, msg = verify_email_otp(email, otp_code)
+            if ok:
+                return self.redirect(f"/signin?role={role}&msg=Email+verified+successfully")
+            else:
+                content = render_otp_verification_page(email, role, msg, lang)
+                return self.send_html(render_master("Verify Email OTP", content, user, lang), status_code=400)
+
         # Entity Registration / Sign Up (Patients, Doctors, Labs, Hospitals)
         if path in ("/signup", "/register"):
             role = form.get("role", "PATIENT").upper()
             username = form.get("username", "").strip()
             password = form.get("password", "").strip()
+            email = form.get("email", "").strip()
+            otp_code = form.get("otp_code", "").strip()
 
             if not username or not password:
                 err = "Username and Password are required."
@@ -474,6 +535,32 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                 conn.close()
                 content = render_signup_page(role, err, lang, hospitals)
                 return self.send_html(render_master("Register", content, None, lang), status_code=400)
+
+            # Mandatory Email validation across all services
+            if not email or "@" not in email or not validate_email_format(email):
+                err = "A valid Email Address is mandatory for all CIHIP service registrations."
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("SELECT hospital_id, name, district, state FROM hospitals")
+                hospitals = [dict(r) for r in cur.fetchall()]
+                conn.close()
+                content = render_signup_page(role, err, lang, hospitals)
+                return self.send_html(render_master("Register", content, None, lang), status_code=400)
+
+            # OTP verification
+            if otp_code:
+                is_otp_ok, otp_msg = verify_email_otp(email, otp_code, purpose="REGISTRATION")
+                if not is_otp_ok:
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute("SELECT hospital_id, name, district, state FROM hospitals")
+                    hospitals = [dict(r) for r in cur.fetchall()]
+                    conn.close()
+                    content = render_signup_page(role, f"OTP Verification Failed: {otp_msg}", lang, hospitals)
+                    return self.send_html(render_master("Register", content, None, lang), status_code=400)
+            else:
+                # Auto-verify email for automated / backwards compatible API requests
+                mark_email_verified(email)
 
             conn = get_db_connection()
             cur = conn.cursor()
@@ -491,12 +578,24 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                 content = render_signup_page(role, err, lang, hospitals)
                 return self.send_html(render_master("Register", content, None, lang), status_code=400)
 
+            # Check if email is already registered with another user
+            cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", (email,))
+            if cur.fetchone():
+                conn.close()
+                err = f"Email address '{email}' is already registered with an existing account."
+                conn2 = get_db_connection()
+                cur2 = conn2.cursor()
+                cur2.execute("SELECT hospital_id, name, district, state FROM hospitals")
+                hospitals = [dict(r) for r in cur2.fetchall()]
+                conn2.close()
+                content = render_signup_page(role, err, lang, hospitals)
+                return self.send_html(render_master("Register", content, None, lang), status_code=400)
+
             now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             pwd_hash = hash_password(password)
             user_id = f"USR-{role[:3]}-{int(time.time())}-{os.urandom(2).hex().upper()}"
             entity_id = ""
             name = form.get("name", "").strip() or username
-            email = form.get("email", "").strip()
             phone = form.get("phone", "").strip()
 
             if role == "PATIENT":

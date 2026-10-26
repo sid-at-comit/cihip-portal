@@ -189,6 +189,136 @@ class TestLoginWorkflows(unittest.TestCase):
         self.assertTrue(doc["udk"].startswith("UDK-IND-"))
         conn.close()
 
+    def test_12_signup_missing_email_rejected(self):
+        post_data = urllib.parse.urlencode({
+            "role": "PATIENT",
+            "name": "Arun Verma",
+            "abha_number": "91-9988-5544-3322",
+            "username": "arun_verma_99",
+            "password": "SecurePassword@123",
+            "email": ""  # Missing mandatory email
+        }).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/signup", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_data)
+        self.assertEqual(code, 400)
+        self.assertIn(b"Email Address is mandatory", body)
+
+    def test_13_signup_with_invalid_otp_rejected(self):
+        post_data = urllib.parse.urlencode({
+            "role": "PATIENT",
+            "name": "Kavita Rao",
+            "abha_number": "91-9988-7711-2233",
+            "username": "kavita_rao_26",
+            "password": "SecurePassword@123",
+            "email": "kavita.rao@example.com",
+            "otp_code": "000000"  # Invalid OTP
+        }).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/signup", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_data)
+        self.assertEqual(code, 400)
+        self.assertIn(b"OTP Verification Failed", body)
+
+    def test_14_signup_with_valid_otp_success(self):
+        # 1. Request OTP via API
+        send_data = urllib.parse.urlencode({"email": "alok.singh@example.com"}).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/api/v1/auth/send-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=send_data)
+        self.assertEqual(code, 200)
+        otp_json = json.loads(body.decode("utf-8"))
+        self.assertTrue(otp_json.get("success"))
+        dispatched_otp = otp_json.get("otp")
+        self.assertEqual(len(dispatched_otp), 6)
+
+        # 2. Complete registration with generated OTP
+        signup_data = urllib.parse.urlencode({
+            "role": "PATIENT",
+            "name": "Alok Singh",
+            "abha_number": "91-8877-6655-4433",
+            "dob": "1988-03-21",
+            "gender": "Male",
+            "blood_group": "O+",
+            "state": "Haryana",
+            "district": "Gurugram",
+            "pincode": "122001",
+            "phone": "+91 98119 88776",
+            "email": "alok.singh@example.com",
+            "username": "alok_singh_88",
+            "password": "SecurePassword@123",
+            "otp_code": dispatched_otp
+        }).encode("utf-8")
+        code, headers, _ = execute_mock_request("POST", "/signup", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=signup_data)
+        self.assertEqual(code, 302)
+        self.assertEqual(headers.get("location"), "/patient")
+
+    def test_16_login_with_registered_email_success(self):
+        # Login Patient with Email
+        post_pat = urllib.parse.urlencode({
+            "role": "PATIENT",
+            "identifier": "rajesh.sharma@example.com",
+            "password": "Admin@123"
+        }).encode("utf-8")
+        code, headers, _ = execute_mock_request("POST", "/signin", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_pat)
+        self.assertEqual(code, 302)
+        self.assertEqual(headers.get("location"), "/patient")
+
+        # Login Doctor with Email
+        post_doc = urllib.parse.urlencode({
+            "role": "DOCTOR",
+            "identifier": "dr.priya.nair@aiims.edu.in",
+            "password": "Admin@123"
+        }).encode("utf-8")
+        code, headers, _ = execute_mock_request("POST", "/signin", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_doc)
+        self.assertEqual(code, 302)
+        self.assertEqual(headers.get("location"), "/doctor")
+
+        # Login Hospital Admin with Email
+        post_hosp = urllib.parse.urlencode({
+            "role": "HOSPITAL_ADMIN",
+            "identifier": "admin@aiims.edu.in",
+            "password": "Admin@123"
+        }).encode("utf-8")
+        code, headers, _ = execute_mock_request("POST", "/signin", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_hosp)
+        self.assertEqual(code, 302)
+        self.assertEqual(headers.get("location"), "/hospital")
+
+    def test_17_otp_api_endpoints(self):
+        # Send OTP
+        send_data = urllib.parse.urlencode({"email": "dr.verma@apex.in"}).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/api/v1/auth/send-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=send_data)
+        self.assertEqual(code, 200)
+        resp = json.loads(body.decode("utf-8"))
+        otp = resp["otp"]
+
+        # Verify correct OTP
+        verify_data = urllib.parse.urlencode({"email": "dr.verma@apex.in", "otp_code": otp}).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/api/v1/auth/verify-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=verify_data)
+        self.assertEqual(code, 200)
+        resp2 = json.loads(body.decode("utf-8"))
+        self.assertTrue(resp2["verified"])
+
+        # Verify incorrect OTP
+        wrong_data = urllib.parse.urlencode({"email": "dr.verma@apex.in", "otp_code": "000000"}).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/api/v1/auth/verify-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=wrong_data)
+        self.assertEqual(code, 400)
+
+        # Universal demo OTP bypass 123456
+        demo_data = urllib.parse.urlencode({"email": "anyuser@health.gov.in", "otp_code": "123456"}).encode("utf-8")
+        code, _, body = execute_mock_request("POST", "/api/v1/auth/verify-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=demo_data)
+        self.assertEqual(code, 200)
+
+    def test_18_verify_otp_view_workflow(self):
+        # GET /verify-otp
+        code, _, body = execute_mock_request("GET", "/verify-otp?email=patient@test.com&role=PATIENT")
+        self.assertEqual(code, 200)
+        self.assertIn(b"Email Verification Required", body)
+
+        # POST /verify-otp with valid demo OTP
+        post_data = urllib.parse.urlencode({
+            "email": "patient@test.com",
+            "role": "PATIENT",
+            "otp_code": "123456"
+        }).encode("utf-8")
+        code, headers, _ = execute_mock_request("POST", "/verify-otp", headers={"Content-Type": "application/x-www-form-urlencoded"}, body=post_data)
+        self.assertEqual(code, 302)
+        self.assertIn("/signin?role=PATIENT", headers.get("location"))
+
     def test_15_unauthenticated_role_redirects(self):
         # Protected endpoints must redirect unauthenticated visitors to clean sign-in pages
         protected_routes = [
