@@ -27,6 +27,14 @@ DIFF_PRIVACY_NOISE_SCALE = 0.5
 SESSION_COOKIE_NAME = "cihip_session"
 SESSION_EXPIRY_SECONDS = 86400  # 24 hours
 
+# SMTP Outbound Email Gateway Configuration (Live Email Dispatch)
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+SMTP_FROM = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "noreply@cihip.gov.in"))
+SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
+
 # Supported Languages
 LANGUAGES = {
     "en": "English",

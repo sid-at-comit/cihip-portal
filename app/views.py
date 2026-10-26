@@ -2239,7 +2239,7 @@ function sendRegistrationOTP(emailInputId, statusSpanId, otpInputId) {
         if (emailEl) emailEl.focus();
         return;
     }
-    statusEl.innerHTML = '<span style="color:#0284c7;">Dispatching 6-digit OTP...</span>';
+    statusEl.innerHTML = '<span style="color:#0284c7;">Dispatching 6-digit verification OTP...</span>';
     var params = new URLSearchParams();
     params.append('email', emailEl.value.trim());
     fetch('/api/v1/auth/send-otp', {
@@ -2250,10 +2250,15 @@ function sendRegistrationOTP(emailInputId, statusSpanId, otpInputId) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
         if (res.success) {
-            statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ OTP sent to ' + res.email + ' (Code: ' + res.otp + ')</span>';
-            if (otpEl) {
-                otpEl.value = res.otp;
-                otpEl.focus();
+            if (res.is_live) {
+                statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Verification OTP sent to ' + res.email + '. Please check your inbox.</span>';
+                if (otpEl) otpEl.focus();
+            } else {
+                statusEl.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Verification OTP dispatched to ' + res.email + (res.otp ? ' (Code: ' + res.otp + ')' : '') + '</span>';
+                if (otpEl && res.otp) {
+                    otpEl.value = res.otp;
+                    otpEl.focus();
+                }
             }
         } else {
             statusEl.innerHTML = '<span style="color:#dc2626;">✗ ' + (res.message || 'Error sending OTP') + '</span>';
@@ -2372,7 +2377,7 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         <div class="form-group">
             <label class="form-label">Email Verification OTP (6-Digit Code):</label>
             <input type="text" id="reg_otp_pat" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
-            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> to receive a 6-digit verification code at your email address.</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2437,7 +2442,7 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         <div class="form-group">
             <label class="form-label">Email Verification OTP (6-Digit Code):</label>
             <input type="text" id="reg_otp_doc" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
-            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> to receive a 6-digit verification code at your email address.</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2494,7 +2499,7 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         <div class="form-group">
             <label class="form-label">Email Verification OTP (6-Digit Code):</label>
             <input type="text" id="reg_otp_lab" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
-            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> to receive a 6-digit verification code at your email address.</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2568,7 +2573,7 @@ def render_signup_page(role: str = "PATIENT", error_message: Optional[str] = Non
         <div class="form-group">
             <label class="form-label">Email Verification OTP (6-Digit Code):</label>
             <input type="text" id="reg_otp_hosp" name="otp_code" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6" style="letter-spacing:3px; font-weight:700; text-align:center;">
-            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> above or use instant test code: <code>123456</code></span>
+            <span style="font-size:0.75rem; color:#64748b; margin-top:3px; display:block;">Click <strong>Send OTP</strong> to receive a 6-digit verification code at your email address.</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -2663,9 +2668,6 @@ def render_otp_verification_page(email: str = "", role: str = "PATIENT", error_m
                     <label class="form-label" style="text-align:center; display:block; font-weight:700;">Enter 6-Digit Verification Code:</label>
                     <input type="text" name="otp_code" class="form-control" placeholder="• • • • • •" maxlength="6" autofocus required
                            style="letter-spacing:6px; font-size:1.4rem; font-weight:800; text-align:center; max-width:240px; margin:0 auto;">
-                    <span style="font-size:0.75rem; color:#64748b; text-align:center; display:block; margin-top:6px;">
-                        Developer Test Code: <code>123456</code>
-                    </span>
                 </div>
 
                 <div style="margin-top:24px;">

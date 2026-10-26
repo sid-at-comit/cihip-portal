@@ -28,7 +28,8 @@ from app.security import (
     generate_session_token, generate_prescription_signature,
     hash_password, verify_password, evaluate_zero_trust_access, apply_k_anonymity_mask, apply_differential_privacy_noise,
     generate_upk, generate_udk, verify_blinded_key,
-    generate_email_otp, verify_email_otp, is_email_verified, mark_email_verified, validate_email_format, EMAIL_OTP_STORE
+    generate_email_otp, verify_email_otp, is_email_verified, mark_email_verified, validate_email_format, EMAIL_OTP_STORE,
+    is_live_smtp_enabled
 )
 from app.fhir import (
     to_fhir_patient, to_fhir_practitioner, to_fhir_organization,
@@ -483,13 +484,17 @@ class CIHIPRequestHandler(BaseHTTPRequestHandler):
                 return self.send_json({"success": False, "message": "A valid email address is required to dispatch OTP."}, 400)
 
             otp = generate_email_otp(email, purpose="REGISTRATION")
-            return self.send_json({
+            live_active = is_live_smtp_enabled()
+            resp = {
                 "success": True,
-                "message": f"6-digit verification code successfully dispatched to {email}.",
+                "message": f"6-digit verification code successfully dispatched to {email}." if live_active else f"Verification OTP generated for {email}.",
                 "email": email,
-                "otp": otp,
+                "is_live": live_active,
                 "expires_in": 600
-            })
+            }
+            if not live_active:
+                resp["otp"] = otp
+            return self.send_json(resp)
 
         # Authentication API: Verify Email OTP
         if path == "/api/v1/auth/verify-otp":
