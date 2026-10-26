@@ -8,6 +8,7 @@ import sys
 import os
 import json
 import time
+import html
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn

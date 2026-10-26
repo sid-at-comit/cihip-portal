@@ -315,5 +315,12 @@ class TestFullClinicalPipeline(unittest.TestCase):
         self.assertTrue(doc_data["blinded_key"].startswith("UDK-IND-2026-"))
         self.assertTrue(doc_data["verification_valid"])
 
+    def test_10_not_found_404_handler(self):
+        """Test 404 handler properly renders with escaped URL path."""
+        code, _, body = execute_mock_request("GET", "/some/non/existent/path?query=1")
+        self.assertEqual(code, 404)
+        self.assertIn(b"404 - Resource Not Found", body)
+        self.assertIn(b"/some/non/existent/path", body)
+
 if __name__ == "__main__":
     unittest.main()
