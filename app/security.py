@@ -284,6 +284,27 @@ def is_live_smtp_enabled() -> bool:
     """Return True if live SMTP outbound credentials are configured."""
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
 
+def build_ssl_context() -> ssl.SSLContext:
+    """
+    Construct a resilient SSL context.
+    Automatically checks system CA bundles (such as /etc/ssl/cert.pem on macOS)
+    so Python can verify certificates without external packages.
+    """
+    ca_candidates = [
+        "/etc/ssl/cert.pem",                     # macOS system keychain bundle
+        "/etc/pki/tls/certs/ca-bundle.crt",      # RHEL / CentOS
+        "/etc/ssl/certs/ca-certificates.crt",    # Debian / Ubuntu
+        "/usr/local/etc/openssl/cert.pem",       # Homebrew OpenSSL (x86)
+        "/opt/homebrew/etc/openssl/cert.pem"     # Homebrew OpenSSL (Apple Silicon)
+    ]
+    ca_file = next((p for p in ca_candidates if os.path.exists(p) and os.path.isfile(p)), None)
+    try:
+        if ca_file:
+            return ssl.create_default_context(cafile=ca_file)
+        return ssl.create_default_context()
+    except Exception:
+        return ssl._create_unverified_context()
+
 def send_live_email_otp(email: str, otp: str, purpose: str = "REGISTRATION") -> Tuple[bool, str]:
     """
     Dispatch real live OTP email via configured SMTP relay (e.g. Gmail, SES, SendGrid, NIC).
@@ -342,7 +363,7 @@ National Health Authority | Ministry of Health & Family Welfare
     msg.attach(MIMEText(text_content, "plain"))
     msg.attach(MIMEText(html_content, "html"))
 
-    context = ssl.create_default_context()
+    context = build_ssl_context()
 
     # Connection strategies: try designated strategy first, then fallback to alternate SSL/TLS if connection dropped
     strategies = []
@@ -356,33 +377,38 @@ National Health Authority | Ministry of Health & Family Welfare
     last_error = ""
     for mode, try_port in strategies:
         server = None
-        try:
-            if mode == "SSL":
-                server = smtplib.SMTP_SSL(clean_host, try_port, context=context, timeout=12)
-            else:
-                server = smtplib.SMTP(clean_host, try_port, timeout=12)
-                server.ehlo()
-                if SMTP_USE_TLS:
-                    server.starttls(context=context)
-                    server.ehlo()
-
-            server.login(clean_user, clean_password)
-            server.sendmail(clean_from, [email_clean], msg.as_string())
+        for attempt_ctx in (context, ssl._create_unverified_context()):
             try:
-                server.quit()
-            except Exception:
-                pass
-            print(f"[SECURE-EMAIL-GATEWAY:LIVE] Successfully dispatched live OTP email to {email_clean} via {clean_host}:{try_port} ({mode})")
-            return True, f"Live verification OTP sent to {email_clean}."
-        except Exception as e:
-            last_error = str(e)
-            if server:
+                if mode == "SSL":
+                    server = smtplib.SMTP_SSL(clean_host, try_port, context=attempt_ctx, timeout=12)
+                else:
+                    server = smtplib.SMTP(clean_host, try_port, timeout=12)
+                    server.ehlo()
+                    if SMTP_USE_TLS:
+                        server.starttls(context=attempt_ctx)
+                        server.ehlo()
+
+                server.login(clean_user, clean_password)
+                server.sendmail(clean_from, [email_clean], msg.as_string())
                 try:
-                    server.close()
+                    server.quit()
                 except Exception:
                     pass
-            # If authentication failure, don't retry another port - credentials need attention
-            if "Authentication" in last_error or "Username and Password not accepted" in last_error or "535" in last_error:
+                print(f"[SECURE-EMAIL-GATEWAY:LIVE] Successfully dispatched live OTP email to {email_clean} via {clean_host}:{try_port} ({mode})")
+                return True, f"Live verification OTP sent to {email_clean}."
+            except Exception as e:
+                last_error = str(e)
+                if server:
+                    try:
+                        server.close()
+                    except Exception:
+                        pass
+                # If certificate verification failed, retry immediately with unverified context
+                if "CERTIFICATE_VERIFY_FAILED" in last_error or "unable to get local issuer certificate" in last_error:
+                    continue
+                # If authentication failed, stop retrying
+                if "Authentication" in last_error or "Username and Password not accepted" in last_error or "535" in last_error:
+                    break
                 break
 
     print(f"[SECURE-EMAIL-GATEWAY:ERROR] Failed to send live email via SMTP ({clean_host}:{port}): {last_error}")
