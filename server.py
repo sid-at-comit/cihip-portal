@@ -53,6 +53,7 @@ SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
+    allow_reuse_address = True
 
 class CIHIPRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -1782,7 +1783,15 @@ def main():
     init_db()
 
     server_address = (HOST, PORT)
-    httpd = ThreadingHTTPServer(server_address, CIHIPRequestHandler)
+    try:
+        httpd = ThreadingHTTPServer(server_address, CIHIPRequestHandler)
+    except OSError as e:
+        if getattr(e, "errno", None) == 48:
+            print(f"\n❌ Error: Port {PORT} is already in use by another running process.")
+            print(f"👉 To free port {PORT}, run:  lsof -ti :{PORT} | xargs kill -9")
+            print(f"👉 Or start on a different port:  PORT=8081 python3 server.py\n")
+            sys.exit(1)
+        raise
     print(f"\n🚀 CIHIP National Exchange Server active at: http://{HOST}:{PORT}")
     print(f"📖 Interactive FHIR R4 API Explorer at:  http://{HOST}:{PORT}/api/docs")
     print("Press Ctrl+C to terminate.")
